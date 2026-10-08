@@ -37,7 +37,7 @@ def train_model(data_dir: str, num_epochs: int = 20, batch_size: int = 32, learn
     # 3. Hàm Loss, Optimizer & Scheduler
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
     
     best_model_wts = copy.deepcopy(model.state_dict())
     best_loss = float('inf')
