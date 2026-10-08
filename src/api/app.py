@@ -1,11 +1,23 @@
+import sys
+import os
+
+# Đảm bảo print() hỗ trợ tiếng Việt trên Windows
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+# Thêm thư mục gốc vào sys.path để chạy script trực tiếp
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, "../../"))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 import cv2
 import numpy as np
 import io
 from PIL import Image
-from .inference import EmotionRecognizer
-import os
+from src.api.inference import EmotionRecognizer
 
 app = FastAPI(title="Emotion Recognition API", description="API nhận dạng cảm xúc khuôn mặt dựa trên KDEF dataset.")
 
@@ -44,3 +56,4 @@ async def predict_emotion(file: UploadFile = File(...)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+

@@ -1,4 +1,9 @@
 import os
+import sys
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 import glob
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -56,3 +61,4 @@ if __name__ == "__main__":
     # Đường dẫn cứng tạm thời đến dataset (có thể đổi thành tham số CLI)
     kdef_path = r"F:\Hoc-May\data\balanced-kdef-dataset-by-dolly-prajapati-182"
     analyze_kdef_distribution(kdef_path)
+

@@ -1,11 +1,24 @@
+import sys
+import os
+
+# Đảm bảo print() hỗ trợ tiếng Việt trên Windows
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+# Thêm thư mục gốc vào sys.path để chạy script trực tiếp
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, "../../"))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
 from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
-from .model import build_transfer_learning_model
-from ..data.dataset import KDEFDataset, get_transforms
+from src.models.model import build_transfer_learning_model
+from src.data.dataset import KDEFDataset, get_transforms
 
 def evaluate_model(data_dir: str, model_path: str):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -48,3 +61,4 @@ if __name__ == '__main__':
     kdef_path = r"F:\Hoc-May\data\balanced-kdef-dataset-by-dolly-prajapati-182"
     model_ckpt = "checkpoints/best_model.pth"
     evaluate_model(kdef_path, model_ckpt)
+

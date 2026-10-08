@@ -1,10 +1,22 @@
 import os
+import sys
+
+# Đảm bảo print() hỗ trợ tiếng Việt trên Windows
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+# Thêm thư mục gốc vào sys.path để chạy script trực tiếp
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, "../../"))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from .model import build_transfer_learning_model
-from ..data.dataset import KDEFDataset, get_transforms
+from src.models.model import build_transfer_learning_model
+from src.data.dataset import KDEFDataset, get_transforms
 import copy
 
 def train_model(data_dir: str, num_epochs: int = 20, batch_size: int = 32, learning_rate: float = 1e-4):
@@ -96,3 +108,4 @@ def train_model(data_dir: str, num_epochs: int = 20, batch_size: int = 32, learn
 
 if __name__ == '__main__':
     train_model(data_dir=r"F:\Hoc-May\data\balanced-kdef-dataset-by-dolly-prajapati-182", num_epochs=20)
+
