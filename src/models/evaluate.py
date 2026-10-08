@@ -19,9 +19,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from src.models.model import build_transfer_learning_model
 from src.data.dataset import KDEFDataset, get_transforms
+from src.utils.device import get_device
 
 def evaluate_model(data_dir: str, model_path: str):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device()
     
     test_dataset = KDEFDataset(data_dir, split='test', transform=get_transforms('test'))
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)

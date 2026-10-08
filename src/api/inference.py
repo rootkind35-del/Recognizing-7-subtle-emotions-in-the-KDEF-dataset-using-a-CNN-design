@@ -18,10 +18,11 @@ from PIL import Image
 from src.models.model import build_transfer_learning_model
 from src.preprocessing.alignment import FaceAligner
 from src.data.dataset import get_transforms
+from src.utils.device import get_device
 
 class EmotionRecognizer:
     def __init__(self, model_path: str):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = get_device()
         self.model = build_transfer_learning_model('resnet18', num_classes=7)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.to(self.device)

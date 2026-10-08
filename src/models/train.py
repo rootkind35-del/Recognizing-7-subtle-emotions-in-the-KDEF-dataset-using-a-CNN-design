@@ -17,11 +17,12 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from src.models.model import build_transfer_learning_model
 from src.data.dataset import KDEFDataset, get_transforms
+from src.utils.device import get_device
 import copy
 
 def train_model(data_dir: str, num_epochs: int = 20, batch_size: int = 32, learning_rate: float = 1e-4):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Bắt đầu huấn luyện trên thiết bị: {device}")
+    device = get_device()
+    print("-" * 30)
     
     # 1. Khởi tạo Dataset và DataLoader
     train_dataset = KDEFDataset(data_dir, split='train', transform=get_transforms('train'))
