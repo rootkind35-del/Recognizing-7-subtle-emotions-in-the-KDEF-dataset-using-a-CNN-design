@@ -1,0 +1,49 @@
+{
+  "official": {
+    "n_files": 3358,
+    "n_pixel_sample": 3358,
+    "sizes_top": [
+      [
+        [
+          562,
+          762
+        ],
+        3357
+      ],
+      [
+        [
+          633,
+          970
+        ],
+        1
+      ]
+    ],
+    "n_unique_sizes": 2,
+    "modes": {
+      "RGB": 3358
+    },
+    "dataset_mean": 0.3395393139397323,
+    "dataset_std_of_image_means": 0.06287243991558321,
+    "avg_image_std": 0.17875307000964932
+  },
+  "balanced": {
+    "n_files": 45304,
+    "n_pixel_sample": 4000,
+    "sizes_top": [
+      [
+        [
+          75,
+          75
+        ],
+        45304
+      ]
+    ],
+    "n_unique_sizes": 1,
+    "modes": {
+      "RGB": 45304
+    },
+    "dataset_mean": 0.5073484018798917,
+    "dataset_std_of_image_means": 0.13213609303262963,
+    "avg_image_std": 0.21567456237971783
+  }
+}

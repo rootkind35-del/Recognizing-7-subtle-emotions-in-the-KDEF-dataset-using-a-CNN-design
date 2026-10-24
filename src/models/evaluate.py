@@ -1,11 +1,9 @@
 import sys
 import os
 
-# Đảm bảo print() hỗ trợ tiếng Việt trên Windows
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-# Thêm thư mục gốc vào sys.path để chạy script trực tiếp
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, "../../"))
 if project_root not in sys.path:
@@ -14,10 +12,7 @@ if project_root not in sys.path:
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
-from sklearn.metrics import classification_report, confusion_matrix
-import seaborn as sns
-import matplotlib.pyplot as plt
-from src.models.model import build_transfer_learning_model
+from src.models.model import BaselineCNN
 from src.data.dataset import KDEFDataset, get_transforms
 from src.utils.device import get_device
 
@@ -27,7 +22,7 @@ def evaluate_model(data_dir: str, model_path: str):
     test_dataset = KDEFDataset(data_dir, split='test', transform=get_transforms('test'))
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
     
-    model = build_transfer_learning_model('resnet18', num_classes=7)
+    model = BaselineCNN(num_classes=7)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model = model.to(device)
     model.eval()
@@ -46,17 +41,21 @@ def evaluate_model(data_dir: str, model_path: str):
             
     emotion_names = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
     
-    print("Báo cáo phân loại (Classification Report):")
-    print(classification_report(all_labels, all_preds, target_names=emotion_names))
+    # Tính Accuracy
+    all_preds_t = torch.tensor(all_preds)
+    all_labels_t = torch.tensor(all_labels)
+    acc = (all_preds_t == all_labels_t).float().mean().item()
+    print(f"\nĐộ chính xác tổng thể (Accuracy) trên tập Test: {acc*100:.2f}%")
     
-    cm = confusion_matrix(all_labels, all_preds)
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(cm, annot=True, fmt='d', xticklabels=emotion_names, yticklabels=emotion_names, cmap='Blues')
-    plt.xlabel('Dự đoán')
-    plt.ylabel('Thực tế')
-    plt.title('Ma trận nhầm lẫn (Confusion Matrix)')
-    plt.savefig('confusion_matrix.png')
-    print("Đã lưu ma trận nhầm lẫn tại confusion_matrix.png")
+    # Tính Accuracy trên từng lớp
+    print("\nChi tiết theo từng cảm xúc:")
+    for i, name in enumerate(emotion_names):
+        mask = (all_labels_t == i)
+        if mask.sum() > 0:
+            class_acc = (all_preds_t[mask] == all_labels_t[mask]).float().mean().item()
+            print(f"- {name}: {class_acc*100:.2f}%")
+    
+    print("\nHoàn tất đánh giá!")
 
 if __name__ == '__main__':
     kdef_path = r"F:\Hoc-May\data\balanced-kdef-dataset-by-dolly-prajapati-182"

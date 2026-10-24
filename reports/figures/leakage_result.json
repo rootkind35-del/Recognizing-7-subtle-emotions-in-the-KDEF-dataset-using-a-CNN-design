@@ -1,0 +1,52 @@
+{
+  "official_full": {
+    "n_images_hashed": 4898,
+    "n_unique_md5": 4889,
+    "cross_split_duplicate_images": {
+      "train-val": 10,
+      "train-test": 0,
+      "val-test": 0
+    },
+    "n_hashes_appearing_in_multiple_splits": 1,
+    "within_split_extra_duplicates": {
+      "train": 0,
+      "val": 0,
+      "test": 0
+    }
+  },
+  "official_manifest_subjects": {
+    "manifest_rows": 4898,
+    "subjects_per_split": {
+      "test": 14,
+      "train": 48,
+      "val": 8
+    },
+    "subjects_in_multiple_splits": 0,
+    "subject_overlap_by_pair": {
+      "train-val": 0,
+      "train-test": 0,
+      "val-test": 0
+    },
+    "subject_list_overlap": []
+  },
+  "balanced_sample": {
+    "n_images_hashed": 9000,
+    "n_unique_md5": 8937,
+    "cross_split_duplicate_images": {
+      "train-val": 20,
+      "train-test": 24,
+      "val-test": 23
+    },
+    "n_hashes_appearing_in_multiple_splits": 31,
+    "within_split_extra_duplicates": {
+      "train": 6,
+      "val": 9,
+      "test": 12
+    }
+  },
+  "config": {
+    "balanced_sample_per_split": 3000,
+    "seed": 42,
+    "note": "official hash toàn bộ; balanced hash mẫu 3000/split"
+  }
+}

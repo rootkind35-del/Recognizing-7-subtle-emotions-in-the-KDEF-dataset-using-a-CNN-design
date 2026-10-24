@@ -87,3 +87,4 @@ def get_transforms(split: str = 'train', img_size: int = 224):
             transforms.ToTensor(),
             normalize
         ])
+

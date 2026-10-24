@@ -15,7 +15,7 @@ import cv2
 import torch
 import numpy as np
 from PIL import Image
-from src.models.model import build_transfer_learning_model
+from src.models.model import BaselineCNN
 from src.preprocessing.alignment import FaceAligner
 from src.data.dataset import get_transforms
 from src.utils.device import get_device
@@ -23,7 +23,7 @@ from src.utils.device import get_device
 class EmotionRecognizer:
     def __init__(self, model_path: str):
         self.device = get_device()
-        self.model = build_transfer_learning_model('resnet18', num_classes=7)
+        self.model = BaselineCNN(num_classes=7)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.to(self.device)
         self.model.eval()

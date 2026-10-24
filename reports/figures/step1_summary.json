@@ -1,0 +1,94 @@
+{
+  "official": {
+    "per_class_split": {
+      "train": {
+        "angry": 480,
+        "disgust": 480,
+        "fear": 480,
+        "happy": 480,
+        "neutral": 480,
+        "sad": 479,
+        "surprise": 479
+      },
+      "val": {
+        "angry": 80,
+        "disgust": 80,
+        "fear": 80,
+        "happy": 80,
+        "neutral": 80,
+        "sad": 80,
+        "surprise": 80
+      },
+      "test": {
+        "angry": 140,
+        "disgust": 140,
+        "fear": 140,
+        "happy": 140,
+        "neutral": 140,
+        "sad": 140,
+        "surprise": 140
+      },
+      "total": {
+        "angry": 700,
+        "disgust": 700,
+        "fear": 700,
+        "happy": 700,
+        "neutral": 700,
+        "sad": 699,
+        "surprise": 699
+      }
+    },
+    "split_totals": {
+      "train": 3358,
+      "val": 560,
+      "test": 980
+    },
+    "total": 4898
+  },
+  "balanced": {
+    "per_class_split": {
+      "train": {
+        "Anger": 6472,
+        "Disgust": 6472,
+        "Fear": 6472,
+        "Happy": 6472,
+        "Neutral": 6472,
+        "Sad": 6472,
+        "Surprise": 6472
+      },
+      "val": {
+        "Anger": 1618,
+        "Disgust": 1618,
+        "Fear": 1618,
+        "Happy": 1618,
+        "Neutral": 1618,
+        "Sad": 1618,
+        "Surprise": 1618
+      },
+      "test": {
+        "Anger": 899,
+        "Disgust": 899,
+        "Fear": 899,
+        "Happy": 899,
+        "Neutral": 899,
+        "Sad": 899,
+        "Surprise": 899
+      },
+      "total": {
+        "Anger": 8989,
+        "Disgust": 8989,
+        "Fear": 8989,
+        "Happy": 8989,
+        "Neutral": 8989,
+        "Sad": 8989,
+        "Surprise": 8989
+      }
+    },
+    "split_totals": {
+      "train": 45304,
+      "val": 11326,
+      "test": 6293
+    },
+    "total": 62923
+  }
+}

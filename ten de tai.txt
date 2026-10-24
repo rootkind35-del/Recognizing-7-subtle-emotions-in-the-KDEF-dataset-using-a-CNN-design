@@ -1,0 +1,2 @@
+Nhận dạng cảm xúc khuôn mặt đa văn hóa bằng mạng nơ-ron tích chập (CNN) trên cơ sở dư liệu KDEF (KDEF database)
+

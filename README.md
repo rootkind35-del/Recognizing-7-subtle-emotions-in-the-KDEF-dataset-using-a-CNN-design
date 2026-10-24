@@ -17,3 +17,4 @@ python -m venv venv
 source venv/Scripts/activate # hoặc venv/bin/activate
 pip install -r requirements.txt
 ```
+

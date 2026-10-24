@@ -15,7 +15,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from src.models.model import build_transfer_learning_model
+from src.models.model import BaselineCNN
 from src.data.dataset import KDEFDataset, get_transforms
 from src.utils.device import get_device
 import copy
@@ -31,8 +31,8 @@ def train_model(data_dir: str, num_epochs: int = 20, batch_size: int = 32, learn
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
     
-    # 2. Xây dựng Mô hình
-    model = build_transfer_learning_model('resnet18', num_classes=7, freeze_features=False)
+    # 2. Xây dựng Mô hình (Dùng BaselineCNN theo chuẩn đồ án môn Học Máy)
+    model = BaselineCNN(num_classes=7)
     model = model.to(device)
     
     # 3. Hàm Loss, Optimizer & Scheduler

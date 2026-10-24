@@ -14,3 +14,4 @@ def get_device():
         print("[INFO] Không tìm thấy GPU hợp lệ hoặc chưa cài CUDA Toolkit. Dự án sẽ chạy bằng CPU dự phòng.")
         
     return device
+

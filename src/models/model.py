@@ -73,3 +73,4 @@ def build_transfer_learning_model(model_name: str = 'resnet18', num_classes: int
         raise ValueError(f"Chưa hỗ trợ mô hình {model_name}.")
         
     return model
+

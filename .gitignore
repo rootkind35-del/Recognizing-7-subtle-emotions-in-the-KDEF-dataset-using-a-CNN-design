@@ -1,0 +1,19 @@
+# Dữ liệu lớn — không đưa lên GitHub (883MB ảnh KDEF)
+data/
+
+# Checkpoint / trọng số mô hình (249MB)
+checkpoints/
+*.pth
+*.pt
+
+# Python
+__pycache__/
+*.pyc
+
+# ZCode / thư mục làm việc của agent
+.zcode/
+.agents/
+
+# Hệ điều hành
+Thumbs.db
+.DS_Store
