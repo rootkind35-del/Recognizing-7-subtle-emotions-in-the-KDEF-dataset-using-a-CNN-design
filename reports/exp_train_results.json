@@ -1,1234 +1,1213 @@
 {
   "author": "train-opt",
+  "phase": 2,
   "device": "cuda (NVIDIA GeForce RTX 4060 Laptop GPU)",
   "anti_leakage_verified": true,
   "dataset_split_info": {
-    "raw_train_count": 3358,
-    "raw_val_count": 560,
     "clean_train_count": 3349,
     "clean_val_count": 559,
     "excluded_corrupt_count": 10,
-    "excluded_corrupt_md5": "320b34032e2133fdfb80a58c953d5c94",
-    "excluded_corrupt_files": [
-      "train/disgust/AF20DIHL.JPG",
-      "train/disgust/AM25DIFL.JPG",
-      "train/disgust/AM34DIFR.JPG",
-      "train/disgust/BM21DIFL.JPG",
-      "train/disgust/BM22DIHL.JPG",
-      "train/fear/AF10AFFR.JPG",
-      "train/neutral/AF11NEHL.JPG",
-      "train/neutral/BF13NEHR.JPG",
-      "train/surprise/AF01SUFR.JPG",
-      "val/disgust/BM24DIFL.JPG"
-    ],
-    "mean_train": 0.337032,
-    "std_train": 0.187142,
+    "mean_train": 0.407835,
+    "std_train": 0.242375,
     "train_subjects": 48,
-    "val_subjects": 8,
-    "subject_overlap_train_val": 0
+    "val_subjects": 8
   },
   "experiments": [
     {
-      "exp_id": "exp0_baseline_plateau",
-      "description": "Notebook Best Config: AdamW(lr=3e-4, wd=1e-4) + ReduceLROnPlateau(p=5, f=0.5) + CE(ls=0.1) + khong_erasing",
+      "exp_id": "exp0_stem2ch_ce",
+      "description": "Reference Anchor: KDEF_Stem2Ch_ECA_Strip (1.24M params) + Aspect Crop + CLAHE + Warmup/Cosine + CE(ls=0.1, wd=2e-4)",
+      "model_name": "KDEF_Stem2Ch_ECA_Strip",
       "hyperparams": {
         "epochs": 80,
-        "batch_size": 32,
-        "lr": 0.0003,
-        "weight_decay": 0.0001,
-        "sched_type": "plateau",
-        "aug_mode": "khong_erasing",
-        "loss_type": "ce_smooth",
-        "mixup_alpha": 0.0,
-        "mixup_prob": 0.0,
-        "use_ema": false,
-        "use_swa": false
-      },
-      "elapsed_sec": 544.75,
-      "ep15_val_macro_f1": 0.5995,
-      "ep15_train_macro_f1": 0.6197,
-      "best_epoch": 64,
-      "final_epoch_val_f1": 0.863,
-      "last15_val_f1_mean": 0.8594,
-      "last15_val_f1_std": 0.0041,
-      "train_macro_f1_running_at_best": 0.9517,
-      "train_macro_f1_clean_eval": 0.9865,
-      "val_single_view": {
-        "macro_f1": 0.8715,
-        "accuracy": 0.873,
-        "recall_spread": 0.2375,
-        "hard3_recall_mean": 0.7875,
-        "per_class_recall": {
-          "angry": 0.8125,
-          "disgust": 0.8861,
-          "fear": 0.7625,
-          "happy": 1.0,
-          "neutral": 0.95,
-          "sad": 0.7875,
-          "surprise": 0.9125
-        },
-        "per_class_precision": {
-          "angry": 0.942,
-          "disgust": 0.8046,
-          "fear": 0.8472,
-          "happy": 0.8791,
-          "neutral": 0.9157,
-          "sad": 0.84,
-          "surprise": 0.8902
-        },
-        "per_class_f1": {
-          "angry": 0.8725,
-          "disgust": 0.8434,
-          "fear": 0.8026,
-          "happy": 0.9357,
-          "neutral": 0.9325,
-          "sad": 0.8129,
-          "surprise": 0.9012
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8468,
-          "FR": 0.8214,
-          "HL": 0.8839,
-          "HR": 0.8929,
-          "S": 0.9196
-        },
-        "angle_spread": 0.0982,
-        "fr_fl_gap": 0.0254,
-        "val_loss": 0.7486
-      },
-      "val_tta_flip2": {
-        "macro_f1": 0.8749,
-        "accuracy": 0.8766,
-        "recall_spread": 0.25,
-        "hard3_recall_mean": 0.7792,
-        "per_class_recall": {
-          "angry": 0.7875,
-          "disgust": 0.9114,
-          "fear": 0.75,
-          "happy": 1.0,
-          "neutral": 0.95,
-          "sad": 0.8,
-          "surprise": 0.9375
-        },
-        "per_class_precision": {
-          "angry": 0.9403,
-          "disgust": 0.7912,
-          "fear": 0.8824,
-          "happy": 0.8889,
-          "neutral": 0.9268,
-          "sad": 0.8312,
-          "surprise": 0.8929
-        },
-        "per_class_f1": {
-          "angry": 0.8571,
-          "disgust": 0.8471,
-          "fear": 0.8108,
-          "happy": 0.9412,
-          "neutral": 0.9383,
-          "sad": 0.8153,
-          "surprise": 0.9146
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8288,
-          "FR": 0.8571,
-          "HL": 0.8929,
-          "HR": 0.8929,
-          "S": 0.9107
-        },
-        "angle_spread": 0.0819,
-        "fr_fl_gap": 0.0283,
-        "val_loss": 0.7412
-      },
-      "val_tta_multiscale4": {
-        "macro_f1": 0.8763,
-        "accuracy": 0.8784,
-        "recall_spread": 0.25,
-        "hard3_recall_mean": 0.7833,
-        "per_class_recall": {
-          "angry": 0.8,
-          "disgust": 0.8861,
-          "fear": 0.75,
-          "happy": 1.0,
-          "neutral": 0.9875,
-          "sad": 0.8,
-          "surprise": 0.925
-        },
-        "per_class_precision": {
-          "angry": 0.9143,
-          "disgust": 0.814,
-          "fear": 0.8696,
-          "happy": 0.8791,
-          "neutral": 0.9186,
-          "sad": 0.8649,
-          "surprise": 0.8916
-        },
-        "per_class_f1": {
-          "angry": 0.8533,
-          "disgust": 0.8485,
-          "fear": 0.8054,
-          "happy": 0.9357,
-          "neutral": 0.9518,
-          "sad": 0.8312,
-          "surprise": 0.908
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8288,
-          "FR": 0.8661,
-          "HL": 0.8839,
-          "HR": 0.8929,
-          "S": 0.9196
-        },
-        "angle_spread": 0.0908,
-        "fr_fl_gap": 0.0373,
-        "val_loss": 0.7294
-      },
-      "train_val_gap_running": 0.0802,
-      "train_val_gap_clean": 0.115,
-      "cold_restart_ft_ep1_val_f1": 0.8676,
-      "cold_restart_ft_best_val_f1": 0.8722,
-      "cold_restart_ft_final_val_f1": 0.8659
-    },
-    {
-      "exp_id": "exp1_sched_onecycle",
-      "description": "LR Schedule Ablation: AdamW + OneCycleLR(max_lr=1e-3, pct_start=0.1) + CE(ls=0.1) + khong_erasing",
-      "hyperparams": {
-        "epochs": 80,
-        "batch_size": 32,
         "lr": 0.001,
-        "weight_decay": 0.0001,
-        "sched_type": "onecycle",
-        "aug_mode": "khong_erasing",
-        "loss_type": "ce_smooth",
-        "mixup_alpha": 0.0,
-        "mixup_prob": 0.0,
+        "weight_decay": 0.0002,
+        "use_per_image_norm": false,
+        "use_flip_consistency": false,
+        "use_logit_adjusted_loss": false,
+        "use_curriculum_mixup": false,
         "use_ema": false,
-        "use_swa": false
+        "use_precise_bn": false
       },
-      "elapsed_sec": 651.0,
-      "ep15_val_macro_f1": 0.5454,
-      "ep15_train_macro_f1": 0.6086,
-      "best_epoch": 70,
-      "final_epoch_val_f1": 0.8729,
-      "last15_val_f1_mean": 0.8682,
-      "last15_val_f1_std": 0.0046,
-      "train_macro_f1_running_at_best": 0.9779,
-      "train_macro_f1_clean_eval": 0.9958,
+      "elapsed_sec": 502.07,
+      "best_epoch": 63,
+      "ep15_val_macro_f1": 0.7455,
+      "train_eval_macro_f1": 0.9985,
+      "train_val_gap": 0.0926,
       "val_single_view": {
-        "macro_f1": 0.8768,
-        "accuracy": 0.8784,
-        "recall_spread": 0.25,
-        "hard3_recall_mean": 0.8208,
+        "macro_f1": 0.9059,
+        "accuracy": 0.9052,
+        "recall_spread": 0.175,
         "per_class_recall": {
-          "angry": 0.8875,
-          "disgust": 0.8861,
-          "fear": 0.85,
-          "happy": 0.975,
-          "neutral": 0.975,
-          "sad": 0.725,
-          "surprise": 0.85
-        },
-        "per_class_precision": {
-          "angry": 0.9342,
-          "disgust": 0.8861,
-          "fear": 0.8293,
-          "happy": 0.8864,
-          "neutral": 0.8571,
-          "sad": 0.8529,
-          "surprise": 0.9067
-        },
-        "per_class_f1": {
-          "angry": 0.9103,
-          "disgust": 0.8861,
-          "fear": 0.8395,
-          "happy": 0.9286,
-          "neutral": 0.9123,
-          "sad": 0.7838,
-          "surprise": 0.8774
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8108,
-          "FR": 0.8929,
-          "HL": 0.8661,
-          "HR": 0.9107,
-          "S": 0.9107
-        },
-        "angle_spread": 0.0999,
-        "fr_fl_gap": 0.0821,
-        "val_loss": 0.7301
-      },
-      "val_tta_flip2": {
-        "macro_f1": 0.8786,
-        "accuracy": 0.8801,
-        "recall_spread": 0.2625,
-        "hard3_recall_mean": 0.8167,
-        "per_class_recall": {
-          "angry": 0.875,
+          "angry": 0.825,
           "disgust": 0.9114,
-          "fear": 0.85,
-          "happy": 0.975,
-          "neutral": 0.9875,
-          "sad": 0.725,
-          "surprise": 0.8375
-        },
-        "per_class_precision": {
-          "angry": 0.9459,
-          "disgust": 0.878,
-          "fear": 0.8095,
-          "happy": 0.8966,
-          "neutral": 0.8681,
-          "sad": 0.8657,
-          "surprise": 0.9054
-        },
-        "per_class_f1": {
-          "angry": 0.9091,
-          "disgust": 0.8944,
-          "fear": 0.8293,
-          "happy": 0.9341,
-          "neutral": 0.924,
-          "sad": 0.7891,
-          "surprise": 0.8701
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8018,
-          "FR": 0.8929,
-          "HL": 0.8661,
-          "HR": 0.9286,
-          "S": 0.9107
-        },
-        "angle_spread": 0.1268,
-        "fr_fl_gap": 0.0911,
-        "val_loss": 0.7169
-      },
-      "val_tta_multiscale4": {
-        "macro_f1": 0.8766,
-        "accuracy": 0.8784,
-        "recall_spread": 0.2625,
-        "hard3_recall_mean": 0.8167,
-        "per_class_recall": {
-          "angry": 0.9125,
-          "disgust": 0.8734,
-          "fear": 0.8125,
-          "happy": 0.975,
-          "neutral": 0.9875,
-          "sad": 0.725,
-          "surprise": 0.8625
-        },
-        "per_class_precision": {
-          "angry": 0.9125,
-          "disgust": 0.92,
-          "fear": 0.8228,
-          "happy": 0.8966,
-          "neutral": 0.8587,
-          "sad": 0.8406,
-          "surprise": 0.8961
-        },
-        "per_class_f1": {
-          "angry": 0.9125,
-          "disgust": 0.8961,
-          "fear": 0.8176,
-          "happy": 0.9341,
-          "neutral": 0.9186,
-          "sad": 0.7785,
-          "surprise": 0.879
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8378,
-          "FR": 0.8839,
-          "HL": 0.8482,
-          "HR": 0.9196,
-          "S": 0.9018
-        },
-        "angle_spread": 0.0818,
-        "fr_fl_gap": 0.0461,
-        "val_loss": 0.7158
-      },
-      "train_val_gap_running": 0.1011,
-      "train_val_gap_clean": 0.119
-    },
-    {
-      "exp_id": "exp2_sched_warmup_cosine",
-      "description": "LR Schedule Ablation: AdamW(lr=1e-3, wd=1e-4) + 5-ep Linear Warmup + CosineAnnealingLR(1e-6) + CE(ls=0.1) + khong_erasing",
-      "hyperparams": {
-        "epochs": 80,
-        "batch_size": 32,
-        "lr": 0.001,
-        "weight_decay": 0.0001,
-        "sched_type": "warmup_cosine",
-        "aug_mode": "khong_erasing",
-        "loss_type": "ce_smooth",
-        "mixup_alpha": 0.0,
-        "mixup_prob": 0.0,
-        "use_ema": false,
-        "use_swa": false
-      },
-      "elapsed_sec": 544.84,
-      "ep15_val_macro_f1": 0.6338,
-      "ep15_train_macro_f1": 0.5927,
-      "best_epoch": 74,
-      "final_epoch_val_f1": 0.8956,
-      "last15_val_f1_mean": 0.8898,
-      "last15_val_f1_std": 0.0065,
-      "train_macro_f1_running_at_best": 0.9785,
-      "train_macro_f1_clean_eval": 0.9958,
-      "val_single_view": {
-        "macro_f1": 0.901,
-        "accuracy": 0.9016,
-        "recall_spread": 0.2,
-        "hard3_recall_mean": 0.8375,
-        "per_class_recall": {
-          "angry": 0.8875,
-          "disgust": 0.9241,
           "fear": 0.825,
           "happy": 1.0,
-          "neutral": 0.95,
-          "sad": 0.8,
+          "neutral": 0.9375,
+          "sad": 0.9125,
           "surprise": 0.925
         },
         "per_class_precision": {
-          "angry": 0.9726,
-          "disgust": 0.8202,
-          "fear": 0.88,
-          "happy": 0.9091,
-          "neutral": 0.9268,
-          "sad": 0.8767,
-          "surprise": 0.9367
+          "angry": 1.0,
+          "disgust": 0.7742,
+          "fear": 0.8571,
+          "happy": 0.8791,
+          "neutral": 0.9868,
+          "sad": 0.8902,
+          "surprise": 1.0
         },
         "per_class_f1": {
-          "angry": 0.9281,
-          "disgust": 0.869,
-          "fear": 0.8516,
-          "happy": 0.9524,
-          "neutral": 0.9383,
-          "sad": 0.8366,
-          "surprise": 0.9308
+          "angry": 0.9041,
+          "disgust": 0.8372,
+          "fear": 0.8408,
+          "happy": 0.9357,
+          "neutral": 0.9615,
+          "sad": 0.9012,
+          "surprise": 0.961
         },
         "per_angle_accuracy": {
-          "FL": 0.8468,
-          "FR": 0.8839,
-          "HL": 0.8839,
-          "HR": 0.9375,
-          "S": 0.9554
+          "FL": 0.9009,
+          "FR": 0.8571,
+          "HL": 0.8929,
+          "HR": 0.9464,
+          "S": 0.9286
         },
-        "angle_spread": 0.1086,
-        "fr_fl_gap": 0.0371,
-        "val_loss": 0.7109
+        "angle_spread": 0.0893,
+        "fr_fl_gap": 0.0438,
+        "val_loss": 0.6158
       },
       "val_tta_flip2": {
-        "macro_f1": 0.8995,
-        "accuracy": 0.8998,
-        "recall_spread": 0.2125,
-        "hard3_recall_mean": 0.8375,
+        "macro_f1": 0.9111,
+        "accuracy": 0.9106,
+        "recall_spread": 0.1625,
         "per_class_recall": {
-          "angry": 0.875,
-          "disgust": 0.9367,
-          "fear": 0.85,
+          "angry": 0.8625,
+          "disgust": 0.8987,
+          "fear": 0.8375,
           "happy": 1.0,
-          "neutral": 0.925,
-          "sad": 0.7875,
+          "neutral": 0.9375,
+          "sad": 0.9125,
           "surprise": 0.925
         },
         "per_class_precision": {
-          "angry": 0.9859,
-          "disgust": 0.7957,
-          "fear": 0.8947,
-          "happy": 0.9091,
-          "neutral": 0.925,
-          "sad": 0.875,
-          "surprise": 0.9367
+          "angry": 0.9857,
+          "disgust": 0.7802,
+          "fear": 0.8816,
+          "happy": 0.8889,
+          "neutral": 0.974,
+          "sad": 0.9241,
+          "surprise": 0.9737
         },
         "per_class_f1": {
-          "angry": 0.9272,
-          "disgust": 0.8605,
-          "fear": 0.8718,
-          "happy": 0.9524,
-          "neutral": 0.925,
-          "sad": 0.8289,
-          "surprise": 0.9308
+          "angry": 0.92,
+          "disgust": 0.8353,
+          "fear": 0.859,
+          "happy": 0.9412,
+          "neutral": 0.9554,
+          "sad": 0.9182,
+          "surprise": 0.9487
         },
         "per_angle_accuracy": {
-          "FL": 0.8559,
-          "FR": 0.875,
-          "HL": 0.8929,
-          "HR": 0.9286,
+          "FL": 0.8829,
+          "FR": 0.8661,
+          "HL": 0.9107,
+          "HR": 0.9464,
           "S": 0.9464
         },
-        "angle_spread": 0.0905,
-        "fr_fl_gap": 0.0191,
-        "val_loss": 0.7026
+        "angle_spread": 0.0803,
+        "fr_fl_gap": 0.0168,
+        "val_loss": 0.6043
       },
       "val_tta_multiscale4": {
-        "macro_f1": 0.9037,
-        "accuracy": 0.9052,
-        "recall_spread": 0.225,
-        "hard3_recall_mean": 0.8333,
+        "macro_f1": 0.9211,
+        "accuracy": 0.9213,
+        "recall_spread": 0.15,
         "per_class_recall": {
-          "angry": 0.9125,
-          "disgust": 0.9367,
-          "fear": 0.8125,
+          "angry": 0.875,
+          "disgust": 0.8861,
+          "fear": 0.85,
           "happy": 1.0,
-          "neutral": 0.9625,
-          "sad": 0.775,
+          "neutral": 0.95,
+          "sad": 0.95,
           "surprise": 0.9375
         },
         "per_class_precision": {
-          "angry": 0.9241,
-          "disgust": 0.8506,
-          "fear": 0.9286,
+          "angry": 0.9722,
+          "disgust": 0.8537,
+          "fear": 0.9189,
           "happy": 0.8989,
-          "neutral": 0.9059,
-          "sad": 0.9118,
-          "surprise": 0.9259
+          "neutral": 0.962,
+          "sad": 0.8837,
+          "surprise": 0.974
         },
         "per_class_f1": {
-          "angry": 0.9182,
-          "disgust": 0.8916,
-          "fear": 0.8667,
+          "angry": 0.9211,
+          "disgust": 0.8696,
+          "fear": 0.8831,
           "happy": 0.9467,
-          "neutral": 0.9333,
-          "sad": 0.8378,
-          "surprise": 0.9317
+          "neutral": 0.956,
+          "sad": 0.9157,
+          "surprise": 0.9554
         },
         "per_angle_accuracy": {
-          "FL": 0.8468,
+          "FL": 0.9009,
           "FR": 0.8839,
-          "HL": 0.9018,
+          "HL": 0.9286,
           "HR": 0.9554,
           "S": 0.9375
         },
-        "angle_spread": 0.1086,
-        "fr_fl_gap": 0.0371,
-        "val_loss": 0.6865
+        "angle_spread": 0.0715,
+        "fr_fl_gap": 0.017,
+        "val_loss": 0.5982
       },
-      "train_val_gap_running": 0.0775,
-      "train_val_gap_clean": 0.0948
+      "activation_discrepancy": {
+        "stage1": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.4982,
+          "post_neg_frac": 0.3372,
+          "pre_std": 0.5506,
+          "post_std": 0.3148,
+          "scale_ratio": 0.57
+        },
+        "stage2": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.5093,
+          "post_neg_frac": 0.4261,
+          "pre_std": 0.6171,
+          "post_std": 0.3715,
+          "scale_ratio": 0.6
+        },
+        "stage3": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.4962,
+          "post_neg_frac": 0.5933,
+          "pre_std": 0.2883,
+          "post_std": 0.1946,
+          "scale_ratio": 0.68
+        },
+        "stage4": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.5034,
+          "post_neg_frac": 0.7148,
+          "pre_std": 0.2842,
+          "post_std": 0.2766,
+          "scale_ratio": 0.97
+        }
+      }
     },
     {
-      "exp_id": "exp3_aug_geom_photo",
-      "description": "Augmentation Ablation: Warmup+Cosine + RandomPerspective(0.14, p=0.3) + Affine(12 deg, trans=4%) + ColorJitter(0.15)",
+      "exp_id": "exp1_flip_consistency",
+      "description": "KDEF_Stem2Ch_ECA_Strip + Horizontal Flip Consistency KL Loss (lambda=0.5) to eliminate pose asymmetry",
+      "model_name": "KDEF_Stem2Ch_ECA_Strip",
       "hyperparams": {
         "epochs": 80,
-        "batch_size": 32,
         "lr": 0.001,
-        "weight_decay": 0.0001,
-        "sched_type": "warmup_cosine",
-        "aug_mode": "enhanced_geom_photo",
-        "loss_type": "ce_smooth",
-        "mixup_alpha": 0.0,
-        "mixup_prob": 0.0,
+        "weight_decay": 0.0002,
+        "use_per_image_norm": false,
+        "use_flip_consistency": true,
+        "use_logit_adjusted_loss": false,
+        "use_curriculum_mixup": false,
         "use_ema": false,
-        "use_swa": false
+        "use_precise_bn": false
       },
-      "elapsed_sec": 919.78,
-      "ep15_val_macro_f1": 0.1858,
-      "ep15_train_macro_f1": 0.227,
-      "best_epoch": 49,
-      "final_epoch_val_f1": 0.8808,
-      "last15_val_f1_mean": 0.8786,
-      "last15_val_f1_std": 0.0046,
-      "train_macro_f1_running_at_best": 0.914,
-      "train_macro_f1_clean_eval": 0.9661,
+      "elapsed_sec": 873.03,
+      "best_epoch": 54,
+      "ep15_val_macro_f1": 0.8449,
+      "train_eval_macro_f1": 0.9982,
+      "train_val_gap": 0.0949,
       "val_single_view": {
-        "macro_f1": 0.8938,
-        "accuracy": 0.8945,
-        "recall_spread": 0.1875,
-        "hard3_recall_mean": 0.85,
+        "macro_f1": 0.9033,
+        "accuracy": 0.9034,
+        "recall_spread": 0.2,
+        "per_class_recall": {
+          "angry": 0.9,
+          "disgust": 0.9114,
+          "fear": 0.8,
+          "happy": 1.0,
+          "neutral": 0.95,
+          "sad": 0.8625,
+          "surprise": 0.9
+        },
+        "per_class_precision": {
+          "angry": 0.973,
+          "disgust": 0.8276,
+          "fear": 0.8649,
+          "happy": 0.8511,
+          "neutral": 0.9157,
+          "sad": 0.9452,
+          "surprise": 0.973
+        },
+        "per_class_f1": {
+          "angry": 0.9351,
+          "disgust": 0.8675,
+          "fear": 0.8312,
+          "happy": 0.9195,
+          "neutral": 0.9325,
+          "sad": 0.902,
+          "surprise": 0.9351
+        },
+        "per_angle_accuracy": {
+          "FL": 0.9009,
+          "FR": 0.8571,
+          "HL": 0.8929,
+          "HR": 0.9375,
+          "S": 0.9286
+        },
+        "angle_spread": 0.0804,
+        "fr_fl_gap": 0.0438,
+        "val_loss": 0.6222
+      },
+      "val_tta_flip2": {
+        "macro_f1": 0.9067,
+        "accuracy": 0.907,
+        "recall_spread": 0.175,
+        "per_class_recall": {
+          "angry": 0.875,
+          "disgust": 0.9114,
+          "fear": 0.825,
+          "happy": 1.0,
+          "neutral": 0.975,
+          "sad": 0.8625,
+          "surprise": 0.9
+        },
+        "per_class_precision": {
+          "angry": 0.9722,
+          "disgust": 0.8471,
+          "fear": 0.8684,
+          "happy": 0.8602,
+          "neutral": 0.9176,
+          "sad": 0.9324,
+          "surprise": 0.973
+        },
+        "per_class_f1": {
+          "angry": 0.9211,
+          "disgust": 0.878,
+          "fear": 0.8462,
+          "happy": 0.9249,
+          "neutral": 0.9455,
+          "sad": 0.8961,
+          "surprise": 0.9351
+        },
+        "per_angle_accuracy": {
+          "FL": 0.8919,
+          "FR": 0.8571,
+          "HL": 0.9107,
+          "HR": 0.9464,
+          "S": 0.9286
+        },
+        "angle_spread": 0.0893,
+        "fr_fl_gap": 0.0348,
+        "val_loss": 0.6102
+      },
+      "val_tta_multiscale4": {
+        "macro_f1": 0.9048,
+        "accuracy": 0.9052,
+        "recall_spread": 0.1625,
         "per_class_recall": {
           "angry": 0.8875,
           "disgust": 0.8861,
-          "fear": 0.85,
+          "fear": 0.8375,
           "happy": 1.0,
-          "neutral": 0.95,
-          "sad": 0.8125,
-          "surprise": 0.875
+          "neutral": 0.9625,
+          "sad": 0.85,
+          "surprise": 0.9125
         },
         "per_class_precision": {
           "angry": 0.9467,
-          "disgust": 0.8434,
-          "fear": 0.85,
-          "happy": 0.8989,
-          "neutral": 0.9048,
-          "sad": 0.8904,
-          "surprise": 0.9333
+          "disgust": 0.8861,
+          "fear": 0.8701,
+          "happy": 0.8602,
+          "neutral": 0.9167,
+          "sad": 0.8947,
+          "surprise": 0.9733
         },
         "per_class_f1": {
           "angry": 0.9161,
-          "disgust": 0.8642,
-          "fear": 0.85,
-          "happy": 0.9467,
-          "neutral": 0.9268,
-          "sad": 0.8497,
-          "surprise": 0.9032
+          "disgust": 0.8861,
+          "fear": 0.8535,
+          "happy": 0.9249,
+          "neutral": 0.939,
+          "sad": 0.8718,
+          "surprise": 0.9419
         },
         "per_angle_accuracy": {
-          "FL": 0.8559,
-          "FR": 0.8393,
-          "HL": 0.8929,
-          "HR": 0.9286,
-          "S": 0.9554
+          "FL": 0.9009,
+          "FR": 0.8571,
+          "HL": 0.9107,
+          "HR": 0.9464,
+          "S": 0.9107
         },
-        "angle_spread": 0.1161,
-        "fr_fl_gap": 0.0166,
-        "val_loss": 0.7185
+        "angle_spread": 0.0893,
+        "fr_fl_gap": 0.0438,
+        "val_loss": 0.6052
+      },
+      "activation_discrepancy": {
+        "stage1": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.4982,
+          "post_neg_frac": 0.304,
+          "pre_std": 0.5506,
+          "post_std": 0.3044,
+          "scale_ratio": 0.55
+        },
+        "stage2": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.5093,
+          "post_neg_frac": 0.3927,
+          "pre_std": 0.6171,
+          "post_std": 0.3737,
+          "scale_ratio": 0.61
+        },
+        "stage3": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.4962,
+          "post_neg_frac": 0.5616,
+          "pre_std": 0.2883,
+          "post_std": 0.1917,
+          "scale_ratio": 0.66
+        },
+        "stage4": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.5034,
+          "post_neg_frac": 0.7155,
+          "pre_std": 0.2842,
+          "post_std": 0.2712,
+          "scale_ratio": 0.95
+        }
+      }
+    },
+    {
+      "exp_id": "exp2_flip_mixup_wd",
+      "description": "Flip Consistency + Curriculum Mixup (alpha=0.2, prob=0.40, ep 6-65) + Weight Decay 5e-4 + Model EMA (0.996) to slash train-val gap",
+      "model_name": "KDEF_Stem2Ch_ECA_Strip",
+      "hyperparams": {
+        "epochs": 80,
+        "lr": 0.001,
+        "weight_decay": 0.0005,
+        "use_per_image_norm": false,
+        "use_flip_consistency": true,
+        "use_logit_adjusted_loss": false,
+        "use_curriculum_mixup": true,
+        "use_ema": true,
+        "use_precise_bn": false
+      },
+      "elapsed_sec": 882.39,
+      "best_epoch": 68,
+      "ep15_val_macro_f1": 0.8424,
+      "train_eval_macro_f1": 0.9991,
+      "train_val_gap": 0.0925,
+      "val_single_view": {
+        "macro_f1": 0.9066,
+        "accuracy": 0.907,
+        "recall_spread": 0.1875,
+        "per_class_recall": {
+          "angry": 0.8625,
+          "disgust": 0.8987,
+          "fear": 0.8125,
+          "happy": 1.0,
+          "neutral": 0.9875,
+          "sad": 0.85,
+          "surprise": 0.9375
+        },
+        "per_class_precision": {
+          "angry": 0.9857,
+          "disgust": 0.8068,
+          "fear": 0.9028,
+          "happy": 0.8696,
+          "neutral": 0.9186,
+          "sad": 0.9189,
+          "surprise": 0.974
+        },
+        "per_class_f1": {
+          "angry": 0.92,
+          "disgust": 0.8503,
+          "fear": 0.8553,
+          "happy": 0.9302,
+          "neutral": 0.9518,
+          "sad": 0.8831,
+          "surprise": 0.9554
+        },
+        "per_angle_accuracy": {
+          "FL": 0.9009,
+          "FR": 0.875,
+          "HL": 0.8839,
+          "HR": 0.9286,
+          "S": 0.9464
+        },
+        "angle_spread": 0.0714,
+        "fr_fl_gap": 0.0259,
+        "val_loss": 0.6258
       },
       "val_tta_flip2": {
-        "macro_f1": 0.8956,
-        "accuracy": 0.8962,
+        "macro_f1": 0.9118,
+        "accuracy": 0.9123,
         "recall_spread": 0.175,
-        "hard3_recall_mean": 0.8417,
+        "per_class_recall": {
+          "angry": 0.85,
+          "disgust": 0.9114,
+          "fear": 0.825,
+          "happy": 1.0,
+          "neutral": 0.9875,
+          "sad": 0.8625,
+          "surprise": 0.95
+        },
+        "per_class_precision": {
+          "angry": 0.9855,
+          "disgust": 0.8182,
+          "fear": 0.9167,
+          "happy": 0.8989,
+          "neutral": 0.9294,
+          "sad": 0.8961,
+          "surprise": 0.962
+        },
+        "per_class_f1": {
+          "angry": 0.9128,
+          "disgust": 0.8623,
+          "fear": 0.8684,
+          "happy": 0.9467,
+          "neutral": 0.9576,
+          "sad": 0.879,
+          "surprise": 0.956
+        },
+        "per_angle_accuracy": {
+          "FL": 0.8919,
+          "FR": 0.8839,
+          "HL": 0.9107,
+          "HR": 0.9286,
+          "S": 0.9464
+        },
+        "angle_spread": 0.0625,
+        "fr_fl_gap": 0.008,
+        "val_loss": 0.6179
+      },
+      "val_tta_multiscale4": {
+        "macro_f1": 0.9099,
+        "accuracy": 0.9106,
+        "recall_spread": 0.1875,
+        "per_class_recall": {
+          "angry": 0.8375,
+          "disgust": 0.8987,
+          "fear": 0.8125,
+          "happy": 1.0,
+          "neutral": 0.9875,
+          "sad": 0.8875,
+          "surprise": 0.95
+        },
+        "per_class_precision": {
+          "angry": 0.9853,
+          "disgust": 0.8256,
+          "fear": 0.9155,
+          "happy": 0.8791,
+          "neutral": 0.9294,
+          "sad": 0.8987,
+          "surprise": 0.962
+        },
+        "per_class_f1": {
+          "angry": 0.9054,
+          "disgust": 0.8606,
+          "fear": 0.8609,
+          "happy": 0.9357,
+          "neutral": 0.9576,
+          "sad": 0.8931,
+          "surprise": 0.956
+        },
+        "per_angle_accuracy": {
+          "FL": 0.8739,
+          "FR": 0.8929,
+          "HL": 0.9196,
+          "HR": 0.9286,
+          "S": 0.9375
+        },
+        "angle_spread": 0.0636,
+        "fr_fl_gap": 0.019,
+        "val_loss": 0.6176
+      },
+      "activation_discrepancy": {
+        "stage1": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.4982,
+          "post_neg_frac": 0.283,
+          "pre_std": 0.5506,
+          "post_std": 0.2961,
+          "scale_ratio": 0.54
+        },
+        "stage2": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.5093,
+          "post_neg_frac": 0.388,
+          "pre_std": 0.6171,
+          "post_std": 0.369,
+          "scale_ratio": 0.6
+        },
+        "stage3": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.4962,
+          "post_neg_frac": 0.6149,
+          "pre_std": 0.2883,
+          "post_std": 0.197,
+          "scale_ratio": 0.68
+        },
+        "stage4": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.5034,
+          "post_neg_frac": 0.7164,
+          "pre_std": 0.2842,
+          "post_std": 0.3001,
+          "scale_ratio": 1.06
+        }
+      },
+      "ema_val_single_view": {
+        "macro_f1": 0.8975,
+        "accuracy": 0.898,
+        "recall_spread": 0.2125,
+        "per_class_recall": {
+          "angry": 0.8625,
+          "disgust": 0.8987,
+          "fear": 0.7875,
+          "happy": 1.0,
+          "neutral": 0.975,
+          "sad": 0.8375,
+          "surprise": 0.925
+        },
+        "per_class_precision": {
+          "angry": 0.9857,
+          "disgust": 0.7978,
+          "fear": 0.8873,
+          "happy": 0.8696,
+          "neutral": 0.9176,
+          "sad": 0.9054,
+          "surprise": 0.9487
+        },
+        "per_class_f1": {
+          "angry": 0.92,
+          "disgust": 0.8452,
+          "fear": 0.8344,
+          "happy": 0.9302,
+          "neutral": 0.9455,
+          "sad": 0.8701,
+          "surprise": 0.9367
+        },
+        "per_angle_accuracy": {
+          "FL": 0.8649,
+          "FR": 0.8839,
+          "HL": 0.8839,
+          "HR": 0.9196,
+          "S": 0.9375
+        },
+        "angle_spread": 0.0726,
+        "fr_fl_gap": 0.019,
+        "val_loss": 0.6221
+      },
+      "ema_val_tta_flip2": {
+        "macro_f1": 0.9102,
+        "accuracy": 0.9106,
+        "recall_spread": 0.1625,
         "per_class_recall": {
           "angry": 0.8625,
           "disgust": 0.9114,
           "fear": 0.8375,
           "happy": 1.0,
-          "neutral": 0.9625,
-          "sad": 0.825,
-          "surprise": 0.875
+          "neutral": 0.9875,
+          "sad": 0.85,
+          "surprise": 0.925
         },
         "per_class_precision": {
-          "angry": 0.9452,
-          "disgust": 0.8276,
-          "fear": 0.859,
-          "happy": 0.8989,
-          "neutral": 0.9277,
-          "sad": 0.8919,
-          "surprise": 0.9333
+          "angry": 0.9857,
+          "disgust": 0.809,
+          "fear": 0.8933,
+          "happy": 0.9091,
+          "neutral": 0.9294,
+          "sad": 0.9067,
+          "surprise": 0.961
         },
         "per_class_f1": {
-          "angry": 0.902,
-          "disgust": 0.8675,
-          "fear": 0.8481,
-          "happy": 0.9467,
-          "neutral": 0.9448,
-          "sad": 0.8571,
-          "surprise": 0.9032
+          "angry": 0.92,
+          "disgust": 0.8571,
+          "fear": 0.8645,
+          "happy": 0.9524,
+          "neutral": 0.9576,
+          "sad": 0.8774,
+          "surprise": 0.9427
         },
         "per_angle_accuracy": {
           "FL": 0.8919,
-          "FR": 0.8214,
-          "HL": 0.875,
-          "HR": 0.9375,
-          "S": 0.9554
-        },
-        "angle_spread": 0.134,
-        "fr_fl_gap": 0.0705,
-        "val_loss": 0.7087
-      },
-      "val_tta_multiscale4": {
-        "macro_f1": 0.8936,
-        "accuracy": 0.8945,
-        "recall_spread": 0.175,
-        "hard3_recall_mean": 0.85,
-        "per_class_recall": {
-          "angry": 0.9,
-          "disgust": 0.8608,
-          "fear": 0.825,
-          "happy": 1.0,
-          "neutral": 0.9625,
-          "sad": 0.825,
-          "surprise": 0.8875
-        },
-        "per_class_precision": {
-          "angry": 0.9,
-          "disgust": 0.8718,
-          "fear": 0.8571,
-          "happy": 0.8989,
-          "neutral": 0.9277,
-          "sad": 0.8684,
-          "surprise": 0.9342
-        },
-        "per_class_f1": {
-          "angry": 0.9,
-          "disgust": 0.8662,
-          "fear": 0.8408,
-          "happy": 0.9467,
-          "neutral": 0.9448,
-          "sad": 0.8462,
-          "surprise": 0.9103
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8919,
-          "FR": 0.8304,
-          "HL": 0.8839,
+          "FR": 0.8929,
+          "HL": 0.9018,
           "HR": 0.9286,
           "S": 0.9375
         },
-        "angle_spread": 0.1071,
-        "fr_fl_gap": 0.0615,
-        "val_loss": 0.7056
-      },
-      "train_val_gap_running": 0.0202,
-      "train_val_gap_clean": 0.0723
+        "angle_spread": 0.0456,
+        "fr_fl_gap": 0.001,
+        "val_loss": 0.6114
+      }
     },
     {
-      "exp_id": "exp4_loss_poly1_focal_cb",
-      "description": "Loss Ablation: Warmup+Cosine + Enhanced Aug + Poly-1 Focal CE (gamma=1.2, eps=0.5, ls=0.08, hard-class boost)",
+      "exp_id": "exp3_flip_logit_adj_focal",
+      "description": "Flip Consistency + Logit-Adjusted Margin + Poly-1 Focal Loss (gamma=1.2, eps=0.4) + EMA (0.996) to compress recall spread",
+      "model_name": "KDEF_Stem2Ch_ECA_Strip",
       "hyperparams": {
         "epochs": 80,
-        "batch_size": 32,
         "lr": 0.001,
-        "weight_decay": 0.0001,
-        "sched_type": "warmup_cosine",
-        "aug_mode": "enhanced_geom_photo",
-        "loss_type": "poly1_focal_cb",
-        "mixup_alpha": 0.0,
-        "mixup_prob": 0.0,
-        "use_ema": false,
-        "use_swa": false
+        "weight_decay": 0.0002,
+        "use_per_image_norm": false,
+        "use_flip_consistency": true,
+        "use_logit_adjusted_loss": true,
+        "use_curriculum_mixup": false,
+        "use_ema": true,
+        "use_precise_bn": false
       },
-      "elapsed_sec": 1197.11,
-      "ep15_val_macro_f1": 0.2179,
-      "ep15_train_macro_f1": 0.2548,
-      "best_epoch": 59,
-      "final_epoch_val_f1": 0.8679,
-      "last15_val_f1_mean": 0.863,
-      "last15_val_f1_std": 0.0069,
-      "train_macro_f1_running_at_best": 0.9271,
-      "train_macro_f1_clean_eval": 0.9785,
+      "elapsed_sec": 918.4,
+      "best_epoch": 80,
+      "ep15_val_macro_f1": 0.831,
+      "train_eval_macro_f1": 0.9997,
+      "train_val_gap": 0.1013,
       "val_single_view": {
-        "macro_f1": 0.8865,
-        "accuracy": 0.8873,
-        "recall_spread": 0.2,
-        "hard3_recall_mean": 0.825,
+        "macro_f1": 0.8984,
+        "accuracy": 0.8998,
+        "recall_spread": 0.2125,
         "per_class_recall": {
-          "angry": 0.8625,
-          "disgust": 0.8987,
-          "fear": 0.8125,
-          "happy": 0.9875,
+          "angry": 0.85,
+          "disgust": 0.9114,
+          "fear": 0.8,
+          "happy": 1.0,
           "neutral": 1.0,
-          "sad": 0.8,
-          "surprise": 0.85
+          "sad": 0.7875,
+          "surprise": 0.95
         },
         "per_class_precision": {
-          "angry": 0.9583,
-          "disgust": 0.8875,
-          "fear": 0.7831,
-          "happy": 0.9186,
+          "angry": 0.9855,
+          "disgust": 0.8276,
+          "fear": 0.8649,
+          "happy": 0.8989,
           "neutral": 0.8889,
-          "sad": 0.8649,
-          "surprise": 0.9189
+          "sad": 0.913,
+          "surprise": 0.9383
         },
         "per_class_f1": {
-          "angry": 0.9079,
-          "disgust": 0.8931,
-          "fear": 0.7975,
-          "happy": 0.9518,
+          "angry": 0.9128,
+          "disgust": 0.8675,
+          "fear": 0.8312,
+          "happy": 0.9467,
           "neutral": 0.9412,
-          "sad": 0.8312,
-          "surprise": 0.8831
+          "sad": 0.8456,
+          "surprise": 0.9441
         },
         "per_angle_accuracy": {
-          "FL": 0.8198,
-          "FR": 0.8929,
-          "HL": 0.8839,
-          "HR": 0.9196,
-          "S": 0.9196
+          "FL": 0.8829,
+          "FR": 0.8304,
+          "HL": 0.9018,
+          "HR": 0.9464,
+          "S": 0.9375
         },
-        "angle_spread": 0.0998,
-        "fr_fl_gap": 0.0731,
-        "val_loss": 1.0416
+        "angle_spread": 0.116,
+        "fr_fl_gap": 0.0525,
+        "val_loss": 1.1097
       },
       "val_tta_flip2": {
-        "macro_f1": 0.8773,
-        "accuracy": 0.8784,
+        "macro_f1": 0.9005,
+        "accuracy": 0.9016,
         "recall_spread": 0.2,
-        "hard3_recall_mean": 0.8125,
         "per_class_recall": {
           "angry": 0.8375,
-          "disgust": 0.8861,
-          "fear": 0.8,
-          "happy": 0.9875,
-          "neutral": 1.0,
+          "disgust": 0.9114,
+          "fear": 0.825,
+          "happy": 1.0,
+          "neutral": 0.9875,
           "sad": 0.8,
-          "surprise": 0.8375
+          "surprise": 0.95
         },
         "per_class_precision": {
-          "angry": 0.9437,
-          "disgust": 0.8642,
-          "fear": 0.7901,
-          "happy": 0.908,
-          "neutral": 0.8989,
-          "sad": 0.8312,
-          "surprise": 0.9178
+          "angry": 0.9853,
+          "disgust": 0.8372,
+          "fear": 0.88,
+          "happy": 0.9091,
+          "neutral": 0.8876,
+          "sad": 0.8767,
+          "surprise": 0.95
         },
         "per_class_f1": {
-          "angry": 0.8874,
-          "disgust": 0.875,
-          "fear": 0.795,
-          "happy": 0.9461,
-          "neutral": 0.9467,
-          "sad": 0.8153,
-          "surprise": 0.8758
+          "angry": 0.9054,
+          "disgust": 0.8727,
+          "fear": 0.8516,
+          "happy": 0.9524,
+          "neutral": 0.9349,
+          "sad": 0.8366,
+          "surprise": 0.95
         },
         "per_angle_accuracy": {
-          "FL": 0.8108,
-          "FR": 0.8929,
-          "HL": 0.8482,
-          "HR": 0.9196,
-          "S": 0.9196
+          "FL": 0.8739,
+          "FR": 0.8393,
+          "HL": 0.9196,
+          "HR": 0.9375,
+          "S": 0.9375
         },
-        "angle_spread": 0.1088,
-        "fr_fl_gap": 0.0821,
-        "val_loss": 1.0357
+        "angle_spread": 0.0982,
+        "fr_fl_gap": 0.0346,
+        "val_loss": 1.0777
       },
       "val_tta_multiscale4": {
-        "macro_f1": 0.8848,
-        "accuracy": 0.8855,
-        "recall_spread": 0.2,
-        "hard3_recall_mean": 0.8292,
+        "macro_f1": 0.9078,
+        "accuracy": 0.9088,
+        "recall_spread": 0.175,
         "per_class_recall": {
-          "angry": 0.875,
+          "angry": 0.85,
           "disgust": 0.8987,
-          "fear": 0.8125,
-          "happy": 0.9875,
-          "neutral": 1.0,
-          "sad": 0.8,
-          "surprise": 0.825
+          "fear": 0.8375,
+          "happy": 1.0,
+          "neutral": 0.9875,
+          "sad": 0.825,
+          "surprise": 0.9625
         },
         "per_class_precision": {
-          "angry": 0.9459,
-          "disgust": 0.9103,
-          "fear": 0.7831,
-          "happy": 0.9186,
-          "neutral": 0.8989,
-          "sad": 0.8312,
-          "surprise": 0.9167
+          "angry": 0.9577,
+          "disgust": 0.8987,
+          "fear": 0.9178,
+          "happy": 0.8989,
+          "neutral": 0.8977,
+          "sad": 0.8462,
+          "surprise": 0.9506
         },
         "per_class_f1": {
-          "angry": 0.9091,
-          "disgust": 0.9045,
-          "fear": 0.7975,
-          "happy": 0.9518,
-          "neutral": 0.9467,
-          "sad": 0.8153,
-          "surprise": 0.8684
+          "angry": 0.9007,
+          "disgust": 0.8987,
+          "fear": 0.8758,
+          "happy": 0.9467,
+          "neutral": 0.9405,
+          "sad": 0.8354,
+          "surprise": 0.9565
         },
         "per_angle_accuracy": {
-          "FL": 0.8198,
-          "FR": 0.8839,
-          "HL": 0.8661,
-          "HR": 0.9286,
-          "S": 0.9286
+          "FL": 0.8829,
+          "FR": 0.8571,
+          "HL": 0.9286,
+          "HR": 0.9375,
+          "S": 0.9375
         },
-        "angle_spread": 0.1088,
-        "fr_fl_gap": 0.0641,
-        "val_loss": 1.0216
+        "angle_spread": 0.0804,
+        "fr_fl_gap": 0.0258,
+        "val_loss": 1.0476
       },
-      "train_val_gap_running": 0.0406,
-      "train_val_gap_clean": 0.092
-    },
-    {
-      "exp_id": "exp5_full_mixup_ema_swa_tta",
-      "description": "Full Recipe: Warmup+Cosine + Enhanced Aug + Poly-1 Focal CE + Mixup(alpha=0.2, p=0.5, off last 15ep) + WD=1e-3 + EMA + SWA + TTA",
-      "hyperparams": {
-        "epochs": 80,
-        "batch_size": 32,
-        "lr": 0.001,
-        "weight_decay": 0.001,
-        "sched_type": "warmup_cosine",
-        "aug_mode": "enhanced_geom_photo",
-        "loss_type": "poly1_focal_cb",
-        "mixup_alpha": 0.2,
-        "mixup_prob": 0.5,
-        "use_ema": true,
-        "use_swa": true
+      "activation_discrepancy": {
+        "stage1": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.4982,
+          "post_neg_frac": 0.2923,
+          "pre_std": 0.5506,
+          "post_std": 0.3009,
+          "scale_ratio": 0.55
+        },
+        "stage2": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.5093,
+          "post_neg_frac": 0.4142,
+          "pre_std": 0.6171,
+          "post_std": 0.3785,
+          "scale_ratio": 0.61
+        },
+        "stage3": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.4962,
+          "post_neg_frac": 0.5806,
+          "pre_std": 0.2883,
+          "post_std": 0.1975,
+          "scale_ratio": 0.69
+        },
+        "stage4": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.5034,
+          "post_neg_frac": 0.7327,
+          "pre_std": 0.2842,
+          "post_std": 0.276,
+          "scale_ratio": 0.97
+        }
       },
-      "elapsed_sec": 968.06,
-      "ep15_val_macro_f1": 0.1275,
-      "ep15_train_macro_f1": 0.2241,
-      "best_epoch": 66,
-      "final_epoch_val_f1": 0.8689,
-      "last15_val_f1_mean": 0.8691,
-      "last15_val_f1_std": 0.0074,
-      "train_macro_f1_running_at_best": 0.9356,
-      "train_macro_f1_clean_eval": 0.9832,
-      "val_single_view": {
-        "macro_f1": 0.8838,
-        "accuracy": 0.8855,
-        "recall_spread": 0.25,
-        "hard3_recall_mean": 0.8083,
+      "ema_val_single_view": {
+        "macro_f1": 0.8778,
+        "accuracy": 0.8784,
+        "recall_spread": 0.2375,
         "per_class_recall": {
-          "angry": 0.8875,
-          "disgust": 0.8987,
-          "fear": 0.75,
+          "angry": 0.8,
+          "disgust": 0.9241,
+          "fear": 0.7875,
           "happy": 1.0,
           "neutral": 0.9625,
-          "sad": 0.7875,
+          "sad": 0.7625,
           "surprise": 0.9125
         },
         "per_class_precision": {
-          "angry": 0.9221,
-          "disgust": 0.8452,
-          "fear": 0.8696,
-          "happy": 0.8511,
-          "neutral": 0.8851,
-          "sad": 0.9403,
-          "surprise": 0.9012
+          "angry": 0.9846,
+          "disgust": 0.7374,
+          "fear": 0.84,
+          "happy": 0.9091,
+          "neutral": 0.9059,
+          "sad": 0.8714,
+          "surprise": 0.9481
         },
         "per_class_f1": {
-          "angry": 0.9045,
-          "disgust": 0.8712,
-          "fear": 0.8054,
-          "happy": 0.9195,
-          "neutral": 0.9222,
-          "sad": 0.8571,
-          "surprise": 0.9068
+          "angry": 0.8828,
+          "disgust": 0.8202,
+          "fear": 0.8129,
+          "happy": 0.9524,
+          "neutral": 0.9333,
+          "sad": 0.8133,
+          "surprise": 0.9299
         },
         "per_angle_accuracy": {
-          "FL": 0.8649,
-          "FR": 0.8571,
-          "HL": 0.8839,
-          "HR": 0.9107,
-          "S": 0.9107
-        },
-        "angle_spread": 0.0536,
-        "fr_fl_gap": 0.0078,
-        "val_loss": 0.9546
-      },
-      "val_tta_flip2": {
-        "macro_f1": 0.8711,
-        "accuracy": 0.873,
-        "recall_spread": 0.25,
-        "hard3_recall_mean": 0.7875,
-        "per_class_recall": {
-          "angry": 0.85,
-          "disgust": 0.8987,
-          "fear": 0.7625,
-          "happy": 1.0,
-          "neutral": 0.95,
-          "sad": 0.75,
-          "surprise": 0.9
-        },
-        "per_class_precision": {
-          "angry": 0.9189,
-          "disgust": 0.8659,
-          "fear": 0.8356,
-          "happy": 0.8696,
-          "neutral": 0.8539,
-          "sad": 0.8824,
-          "surprise": 0.8889
-        },
-        "per_class_f1": {
-          "angry": 0.8831,
-          "disgust": 0.882,
-          "fear": 0.7974,
-          "happy": 0.9302,
-          "neutral": 0.8994,
-          "sad": 0.8108,
-          "surprise": 0.8944
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8739,
-          "FR": 0.7946,
-          "HL": 0.8839,
-          "HR": 0.9018,
-          "S": 0.9107
-        },
-        "angle_spread": 0.1161,
-        "fr_fl_gap": 0.0793,
-        "val_loss": 0.9514
-      },
-      "val_tta_multiscale4": {
-        "macro_f1": 0.871,
-        "accuracy": 0.873,
-        "recall_spread": 0.25,
-        "hard3_recall_mean": 0.7875,
-        "per_class_recall": {
-          "angry": 0.85,
-          "disgust": 0.8987,
-          "fear": 0.75,
-          "happy": 1.0,
-          "neutral": 0.9625,
-          "sad": 0.7625,
-          "surprise": 0.8875
-        },
-        "per_class_precision": {
-          "angry": 0.9067,
-          "disgust": 0.8659,
-          "fear": 0.8333,
-          "happy": 0.8696,
-          "neutral": 0.8652,
-          "sad": 0.8971,
-          "surprise": 0.8765
-        },
-        "per_class_f1": {
-          "angry": 0.8774,
-          "disgust": 0.882,
-          "fear": 0.7895,
-          "happy": 0.9302,
-          "neutral": 0.9112,
-          "sad": 0.8243,
-          "surprise": 0.882
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8739,
+          "FL": 0.8468,
           "FR": 0.8036,
           "HL": 0.8839,
-          "HR": 0.9018,
-          "S": 0.9018
+          "HR": 0.9286,
+          "S": 0.9286
         },
-        "angle_spread": 0.0982,
-        "fr_fl_gap": 0.0703,
-        "val_loss": 0.9324
-      },
-      "train_val_gap_running": 0.0518,
-      "train_val_gap_clean": 0.0994,
-      "ema_val_single_view": {
-        "macro_f1": 0.843,
-        "accuracy": 0.8444,
-        "recall_spread": 0.275,
-        "hard3_recall_mean": 0.75,
-        "per_class_recall": {
-          "angry": 0.7625,
-          "disgust": 0.8861,
-          "fear": 0.725,
-          "happy": 1.0,
-          "neutral": 0.9125,
-          "sad": 0.7625,
-          "surprise": 0.8625
-        },
-        "per_class_precision": {
-          "angry": 0.9385,
-          "disgust": 0.8046,
-          "fear": 0.7436,
-          "happy": 0.8511,
-          "neutral": 0.9012,
-          "sad": 0.8026,
-          "surprise": 0.8846
-        },
-        "per_class_f1": {
-          "angry": 0.8414,
-          "disgust": 0.8434,
-          "fear": 0.7342,
-          "happy": 0.9195,
-          "neutral": 0.9068,
-          "sad": 0.7821,
-          "surprise": 0.8734
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8288,
-          "FR": 0.8036,
-          "HL": 0.8661,
-          "HR": 0.8393,
-          "S": 0.8839
-        },
-        "angle_spread": 0.0803,
-        "fr_fl_gap": 0.0252,
-        "val_loss": 1.1335
+        "angle_spread": 0.125,
+        "fr_fl_gap": 0.0432,
+        "val_loss": 1.1306
       },
       "ema_val_tta_flip2": {
-        "macro_f1": 0.8404,
-        "accuracy": 0.8426,
-        "recall_spread": 0.2875,
-        "hard3_recall_mean": 0.7375,
+        "macro_f1": 0.8943,
+        "accuracy": 0.8945,
+        "recall_spread": 0.1875,
         "per_class_recall": {
-          "angry": 0.775,
+          "angry": 0.825,
+          "disgust": 0.9367,
+          "fear": 0.8125,
+          "happy": 1.0,
+          "neutral": 0.9625,
+          "sad": 0.8125,
+          "surprise": 0.9125
+        },
+        "per_class_precision": {
+          "angry": 1.0,
+          "disgust": 0.7708,
+          "fear": 0.8553,
+          "happy": 0.9195,
+          "neutral": 0.9167,
+          "sad": 0.8784,
+          "surprise": 0.9605
+        },
+        "per_class_f1": {
+          "angry": 0.9041,
+          "disgust": 0.8457,
+          "fear": 0.8333,
+          "happy": 0.9581,
+          "neutral": 0.939,
+          "sad": 0.8442,
+          "surprise": 0.9359
+        },
+        "per_angle_accuracy": {
+          "FL": 0.8739,
+          "FR": 0.8214,
+          "HL": 0.9018,
+          "HR": 0.9375,
+          "S": 0.9375
+        },
+        "angle_spread": 0.1161,
+        "fr_fl_gap": 0.0525,
+        "val_loss": 1.0946
+      }
+    },
+    {
+      "exp_id": "exp4_full_plus_precisebn",
+      "description": "Full Discrepancy-Minimizing Recipe: Stem2Ch + Flip Consistency KL + Logit-Adjusted Poly-1 + Curriculum Mixup + EMA(0.996) + PreciseBN Calibration + TTA",
+      "model_name": "KDEF_Stem2Ch_ECA_Strip",
+      "hyperparams": {
+        "epochs": 80,
+        "lr": 0.001,
+        "weight_decay": 0.0005,
+        "use_per_image_norm": false,
+        "use_flip_consistency": true,
+        "use_logit_adjusted_loss": true,
+        "use_curriculum_mixup": true,
+        "use_ema": true,
+        "use_precise_bn": true
+      },
+      "elapsed_sec": 933.73,
+      "best_epoch": 68,
+      "ep15_val_macro_f1": 0.8137,
+      "train_eval_macro_f1": 0.9991,
+      "train_val_gap": 0.0938,
+      "val_single_view": {
+        "macro_f1": 0.9053,
+        "accuracy": 0.9052,
+        "recall_spread": 0.2375,
+        "per_class_recall": {
+          "angry": 0.9,
           "disgust": 0.9114,
-          "fear": 0.725,
-          "happy": 1.0,
-          "neutral": 0.9125,
-          "sad": 0.7125,
-          "surprise": 0.8625
-        },
-        "per_class_precision": {
-          "angry": 0.9538,
-          "disgust": 0.8,
-          "fear": 0.7632,
-          "happy": 0.8511,
-          "neutral": 0.8588,
-          "sad": 0.8143,
-          "surprise": 0.8734
-        },
-        "per_class_f1": {
-          "angry": 0.8552,
-          "disgust": 0.8521,
-          "fear": 0.7436,
-          "happy": 0.9195,
-          "neutral": 0.8848,
-          "sad": 0.76,
-          "surprise": 0.8679
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8108,
-          "FR": 0.8036,
-          "HL": 0.8571,
-          "HR": 0.875,
-          "S": 0.8661
-        },
-        "angle_spread": 0.0714,
-        "fr_fl_gap": 0.0072,
-        "val_loss": 1.1275
-      },
-      "ema_val_tta_multiscale4": {
-        "macro_f1": 0.8445,
-        "accuracy": 0.8462,
-        "recall_spread": 0.2875,
-        "hard3_recall_mean": 0.7542,
-        "per_class_recall": {
-          "angry": 0.7875,
-          "disgust": 0.8861,
-          "fear": 0.7125,
-          "happy": 1.0,
-          "neutral": 0.9125,
-          "sad": 0.7625,
-          "surprise": 0.8625
-        },
-        "per_class_precision": {
-          "angry": 0.9403,
-          "disgust": 0.8333,
           "fear": 0.75,
-          "happy": 0.8511,
-          "neutral": 0.869,
-          "sad": 0.8243,
-          "surprise": 0.8625
-        },
-        "per_class_f1": {
-          "angry": 0.8571,
-          "disgust": 0.8589,
-          "fear": 0.7308,
-          "happy": 0.9195,
-          "neutral": 0.8902,
-          "sad": 0.7922,
-          "surprise": 0.8625
-        },
-        "per_angle_accuracy": {
-          "FL": 0.8288,
-          "FR": 0.8036,
-          "HL": 0.8571,
-          "HR": 0.875,
-          "S": 0.8661
-        },
-        "angle_spread": 0.0714,
-        "fr_fl_gap": 0.0252,
-        "val_loss": 1.1263
-      },
-      "swa_val_single_view": {
-        "macro_f1": 0.8394,
-        "accuracy": 0.8408,
-        "recall_spread": 0.275,
-        "hard3_recall_mean": 0.7458,
-        "per_class_recall": {
-          "angry": 0.7625,
-          "disgust": 0.8734,
-          "fear": 0.725,
-          "happy": 1.0,
+          "happy": 0.9875,
           "neutral": 0.9125,
-          "sad": 0.75,
-          "surprise": 0.8625
+          "sad": 0.925,
+          "surprise": 0.95
         },
         "per_class_precision": {
-          "angry": 0.9385,
-          "disgust": 0.8023,
-          "fear": 0.7342,
-          "happy": 0.8333,
-          "neutral": 0.9012,
-          "sad": 0.8108,
-          "surprise": 0.8846
+          "angry": 1.0,
+          "disgust": 0.7742,
+          "fear": 0.9231,
+          "happy": 0.8587,
+          "neutral": 0.9865,
+          "sad": 0.881,
+          "surprise": 0.962
         },
         "per_class_f1": {
-          "angry": 0.8414,
-          "disgust": 0.8364,
-          "fear": 0.7296,
-          "happy": 0.9091,
-          "neutral": 0.9068,
-          "sad": 0.7792,
-          "surprise": 0.8734
+          "angry": 0.9474,
+          "disgust": 0.8372,
+          "fear": 0.8276,
+          "happy": 0.9186,
+          "neutral": 0.9481,
+          "sad": 0.9024,
+          "surprise": 0.956
         },
         "per_angle_accuracy": {
-          "FL": 0.8288,
-          "FR": 0.7857,
-          "HL": 0.8661,
-          "HR": 0.8393,
-          "S": 0.8839
+          "FL": 0.8919,
+          "FR": 0.8393,
+          "HL": 0.8929,
+          "HR": 0.9196,
+          "S": 0.9821
         },
-        "angle_spread": 0.0982,
-        "fr_fl_gap": 0.0431,
-        "val_loss": 1.1102
+        "angle_spread": 0.1428,
+        "fr_fl_gap": 0.0526,
+        "val_loss": 0.9385
       },
-      "swa_val_tta_flip2": {
-        "macro_f1": 0.8427,
-        "accuracy": 0.8444,
-        "recall_spread": 0.275,
-        "hard3_recall_mean": 0.7458,
+      "val_tta_flip2": {
+        "macro_f1": 0.9035,
+        "accuracy": 0.9034,
+        "recall_spread": 0.2625,
         "per_class_recall": {
-          "angry": 0.775,
-          "disgust": 0.8987,
+          "angry": 0.9,
+          "disgust": 0.9114,
           "fear": 0.7375,
           "happy": 1.0,
-          "neutral": 0.925,
-          "sad": 0.725,
-          "surprise": 0.85
+          "neutral": 0.9125,
+          "sad": 0.9125,
+          "surprise": 0.95
         },
         "per_class_precision": {
-          "angry": 0.9538,
-          "disgust": 0.7978,
-          "fear": 0.7468,
-          "happy": 0.8511,
-          "neutral": 0.8706,
-          "sad": 0.8169,
-          "surprise": 0.8947
+          "angry": 1.0,
+          "disgust": 0.7579,
+          "fear": 0.9219,
+          "happy": 0.8602,
+          "neutral": 0.9865,
+          "sad": 0.8902,
+          "surprise": 0.962
         },
         "per_class_f1": {
-          "angry": 0.8552,
-          "disgust": 0.8452,
-          "fear": 0.7421,
-          "happy": 0.9195,
-          "neutral": 0.897,
-          "sad": 0.7682,
-          "surprise": 0.8718
+          "angry": 0.9474,
+          "disgust": 0.8276,
+          "fear": 0.8194,
+          "happy": 0.9249,
+          "neutral": 0.9481,
+          "sad": 0.9012,
+          "surprise": 0.956
         },
         "per_angle_accuracy": {
-          "FL": 0.8198,
-          "FR": 0.8125,
-          "HL": 0.8482,
-          "HR": 0.8661,
-          "S": 0.875
+          "FL": 0.8829,
+          "FR": 0.8571,
+          "HL": 0.8929,
+          "HR": 0.9107,
+          "S": 0.9732
         },
-        "angle_spread": 0.0625,
-        "fr_fl_gap": 0.0073,
-        "val_loss": 1.104
+        "angle_spread": 0.1161,
+        "fr_fl_gap": 0.0258,
+        "val_loss": 0.9069
       },
-      "swa_val_tta_multiscale4": {
-        "macro_f1": 0.8462,
-        "accuracy": 0.8479,
-        "recall_spread": 0.2875,
-        "hard3_recall_mean": 0.7542,
+      "val_tta_multiscale4": {
+        "macro_f1": 0.913,
+        "accuracy": 0.9141,
+        "recall_spread": 0.275,
         "per_class_recall": {
-          "angry": 0.775,
-          "disgust": 0.8861,
-          "fear": 0.7125,
+          "angry": 0.9125,
+          "disgust": 0.8987,
+          "fear": 0.725,
           "happy": 1.0,
           "neutral": 0.925,
-          "sad": 0.775,
-          "surprise": 0.8625
+          "sad": 0.9625,
+          "surprise": 0.975
         },
         "per_class_precision": {
-          "angry": 0.9394,
-          "disgust": 0.8333,
-          "fear": 0.75,
-          "happy": 0.8511,
-          "neutral": 0.8706,
-          "sad": 0.8267,
-          "surprise": 0.8734
+          "angry": 0.9865,
+          "disgust": 0.8161,
+          "fear": 0.9508,
+          "happy": 0.8602,
+          "neutral": 0.9867,
+          "sad": 0.8851,
+          "surprise": 0.9512
         },
         "per_class_f1": {
-          "angry": 0.8493,
-          "disgust": 0.8589,
-          "fear": 0.7308,
-          "happy": 0.9195,
-          "neutral": 0.897,
-          "sad": 0.8,
-          "surprise": 0.8679
+          "angry": 0.9481,
+          "disgust": 0.8554,
+          "fear": 0.8227,
+          "happy": 0.9249,
+          "neutral": 0.9548,
+          "sad": 0.9222,
+          "surprise": 0.963
         },
         "per_angle_accuracy": {
-          "FL": 0.8288,
-          "FR": 0.8036,
-          "HL": 0.8571,
-          "HR": 0.8661,
-          "S": 0.8839
+          "FL": 0.9099,
+          "FR": 0.875,
+          "HL": 0.9018,
+          "HR": 0.9286,
+          "S": 0.9554
         },
-        "angle_spread": 0.0803,
-        "fr_fl_gap": 0.0252,
-        "val_loss": 1.1024
+        "angle_spread": 0.0804,
+        "fr_fl_gap": 0.0349,
+        "val_loss": 0.8828
+      },
+      "activation_discrepancy": {
+        "stage1": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.4982,
+          "post_neg_frac": 0.3413,
+          "pre_std": 0.5506,
+          "post_std": 0.3652,
+          "scale_ratio": 0.66
+        },
+        "stage2": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.5093,
+          "post_neg_frac": 0.383,
+          "pre_std": 0.6171,
+          "post_std": 0.3898,
+          "scale_ratio": 0.63
+        },
+        "stage3": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.4962,
+          "post_neg_frac": 0.5865,
+          "pre_std": 0.2883,
+          "post_std": 0.192,
+          "scale_ratio": 0.67
+        },
+        "stage4": {
+          "pre_exact_dead_frac": 0.0,
+          "post_exact_dead_frac": 0.0,
+          "delta_exact_dead": 0.0,
+          "pre_neg_frac": 0.5034,
+          "post_neg_frac": 0.7225,
+          "pre_std": 0.2842,
+          "post_std": 0.2853,
+          "scale_ratio": 1.0
+        }
+      },
+      "ema_val_single_view": {
+        "macro_f1": 0.9017,
+        "accuracy": 0.9016,
+        "recall_spread": 0.2625,
+        "per_class_recall": {
+          "angry": 0.9125,
+          "disgust": 0.9114,
+          "fear": 0.725,
+          "happy": 0.9875,
+          "neutral": 0.9375,
+          "sad": 0.9,
+          "surprise": 0.9375
+        },
+        "per_class_precision": {
+          "angry": 1.0,
+          "disgust": 0.75,
+          "fear": 0.8923,
+          "happy": 0.8587,
+          "neutral": 0.9868,
+          "sad": 0.9231,
+          "surprise": 0.9494
+        },
+        "per_class_f1": {
+          "angry": 0.9542,
+          "disgust": 0.8229,
+          "fear": 0.8,
+          "happy": 0.9186,
+          "neutral": 0.9615,
+          "sad": 0.9114,
+          "surprise": 0.9434
+        },
+        "per_angle_accuracy": {
+          "FL": 0.8919,
+          "FR": 0.8393,
+          "HL": 0.8839,
+          "HR": 0.9196,
+          "S": 0.9732
+        },
+        "angle_spread": 0.1339,
+        "fr_fl_gap": 0.0526,
+        "val_loss": 1.0626
+      },
+      "ema_val_tta_flip2": {
+        "macro_f1": 0.903,
+        "accuracy": 0.9034,
+        "recall_spread": 0.275,
+        "per_class_recall": {
+          "angry": 0.9,
+          "disgust": 0.9241,
+          "fear": 0.725,
+          "happy": 1.0,
+          "neutral": 0.925,
+          "sad": 0.9125,
+          "surprise": 0.9375
+        },
+        "per_class_precision": {
+          "angry": 1.0,
+          "disgust": 0.7684,
+          "fear": 0.9062,
+          "happy": 0.8696,
+          "neutral": 0.9737,
+          "sad": 0.9012,
+          "surprise": 0.9494
+        },
+        "per_class_f1": {
+          "angry": 0.9474,
+          "disgust": 0.8391,
+          "fear": 0.8056,
+          "happy": 0.9302,
+          "neutral": 0.9487,
+          "sad": 0.9068,
+          "surprise": 0.9434
+        },
+        "per_angle_accuracy": {
+          "FL": 0.9009,
+          "FR": 0.8482,
+          "HL": 0.8839,
+          "HR": 0.9018,
+          "S": 0.9821
+        },
+        "angle_spread": 0.1339,
+        "fr_fl_gap": 0.0527,
+        "val_loss": 1.0278
       }
     }
   ]

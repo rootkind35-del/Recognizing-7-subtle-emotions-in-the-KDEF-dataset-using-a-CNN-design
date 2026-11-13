@@ -1,447 +1,286 @@
 {
-  "benchmark_baseline_val_f1": 0.8798,
-  "dataset": "official-kdef-dataset-by-ksatrajit0 (clean 3349 train / 559 val)",
+  "benchmark_baseline_reference": {
+    "name": "baseline_kdefnet_ref_phase2",
+    "val_macro_f1": 0.8993,
+    "val_accuracy": 0.8998,
+    "train_val_gap": 0.1004,
+    "recall_spread": 0.175,
+    "pose_asymmetry_gap": 0.0223,
+    "post_act_exact_dead_frac": 0.76,
+    "post_act_std_ratio": 0.53
+  },
+  "dataset": "official-kdef-dataset-by-ksatrajit0 (clean 3349 train / 559 val, 0 test touch)",
   "seed": 42,
+  "epochs": 80,
+  "batch_size": 32,
   "ablations": [
     {
-      "name": "1_plain_kdefnet_raw_squash",
-      "description": "Baseline: Plain KDEFNet on raw 562x762 squashed directly to 128x128 (no crop, no CLAHE)",
-      "num_params": 1240487,
-      "best_epoch": 31,
-      "val_macro_f1": 0.8749,
-      "val_accuracy": 0.8748,
-      "val_recall_spread": 0.175,
-      "per_class_recall": {
-        "angry": 0.8,
+      "name": "1_kdef_eca_strip",
+      "description": "KDEFNet + ECA-Net in Blocks 3-4 + Compact Strip Pool (2,1) (1.24M params, ReLU)",
+      "num_params": 1239341,
+      "best_epoch": 80,
+      "val_macro_f1_single": 0.8941,
+      "val_accuracy_single": 0.8945,
+      "val_macro_f1_tta": 0.8929,
+      "val_accuracy_tta": 0.8927,
+      "epoch_15_val_f1": 0.8042,
+      "train_f1": 0.9988,
+      "train_val_gap": 0.1047,
+      "recall_spread_single": 0.1625,
+      "recall_spread_tta": 0.15,
+      "per_class_recall_single": {
+        "angry": 0.8625,
         "disgust": 0.8734,
-        "fear": 0.8,
-        "happy": 0.975,
-        "neutral": 0.875,
+        "fear": 0.8375,
+        "happy": 1.0,
+        "neutral": 0.8625,
         "sad": 0.8625,
-        "surprise": 0.9375
+        "surprise": 0.9625
       },
-      "train_f1": 0.9812,
-      "train_val_gap": 0.1063,
-      "epoch_15_val_f1": 0.6333,
-      "training_time_s": 264.33,
+      "per_class_recall_tta": {
+        "angry": 0.8625,
+        "disgust": 0.8861,
+        "fear": 0.85,
+        "happy": 1.0,
+        "neutral": 0.875,
+        "sad": 0.85,
+        "surprise": 0.925
+      },
+      "asymmetry_gap_single": 0.1473,
+      "asymmetry_gap_tta": 0.1563,
+      "per_angle_acc_single": {
+        "FL": 0.8378,
+        "FR": 0.8036,
+        "HL": 0.9375,
+        "HR": 0.9643,
+        "S": 0.9286
+      },
+      "per_angle_acc_tta": {
+        "FL": 0.8468,
+        "FR": 0.7946,
+        "HL": 0.9375,
+        "HR": 0.9643,
+        "S": 0.9196
+      },
       "pre_act_stats": {
-        "dead_frac": 0.526,
-        "mean": 0.7167,
-        "std": 1.1746,
-        "max": 10.3682,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
+        "exact_dead_frac": 0.5204,
+        "neg_frac": 0.5204,
+        "mean": 0.0738,
+        "std": 0.1081,
+        "max": 0.8578
       },
       "post_act_stats": {
-        "dead_frac": 0.6621,
-        "mean": 0.2479,
-        "std": 0.7996,
-        "max": 10.572,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
+        "exact_dead_frac": 0.7303,
+        "neg_frac": 0.7303,
+        "mean": 0.0907,
+        "std": 0.2758,
+        "max": 3.1072
       },
-      "config": {
-        "name": "1_plain_kdefnet_raw_squash",
-        "description": "Baseline: Plain KDEFNet on raw 562x762 squashed directly to 128x128 (no crop, no CLAHE)",
-        "act_type": "relu",
-        "use_res": false,
-        "use_se": false,
-        "pool_type": "avg",
-        "drop2d": 0.0
-      }
+      "exact_dead_shift": 0.2099,
+      "neg_frac_shift": 0.2099,
+      "std_ratio": 2.55,
+      "training_time_s": 286.83
     },
     {
-      "name": "2_plain_kdefnet_aspect_crop",
-      "description": "Plain KDEFNet with Aspect-Aware Studio Face Crop (eliminating hair top/shoulders background)",
-      "num_params": 1240487,
-      "best_epoch": 43,
-      "val_macro_f1": 0.8807,
-      "val_accuracy": 0.8819,
-      "val_recall_spread": 0.2125,
-      "per_class_recall": {
+      "name": "2_kdef_silu_eca_strip",
+      "description": "KDEFNet + SiLU Activation + ECA-Net in Blocks 3-4 + Compact Strip Pool (2,1) (1.24M params)",
+      "num_params": 1239341,
+      "best_epoch": 64,
+      "val_macro_f1_single": 0.9038,
+      "val_accuracy_single": 0.9034,
+      "val_macro_f1_tta": 0.8943,
+      "val_accuracy_tta": 0.8945,
+      "epoch_15_val_f1": 0.8159,
+      "train_f1": 0.9991,
+      "train_val_gap": 0.0953,
+      "recall_spread_single": 0.15,
+      "recall_spread_tta": 0.2125,
+      "per_class_recall_single": {
+        "angry": 0.9,
+        "disgust": 0.8987,
+        "fear": 0.825,
+        "happy": 0.975,
+        "neutral": 0.8875,
+        "sad": 0.925,
+        "surprise": 0.9125
+      },
+      "per_class_recall_tta": {
+        "angry": 0.9125,
+        "disgust": 0.9114,
+        "fear": 0.7625,
+        "happy": 0.975,
+        "neutral": 0.8875,
+        "sad": 0.9,
+        "surprise": 0.9125
+      },
+      "asymmetry_gap_single": 0.0982,
+      "asymmetry_gap_tta": 0.0982,
+      "per_angle_acc_single": {
+        "FL": 0.9099,
+        "FR": 0.8304,
+        "HL": 0.9286,
+        "HR": 0.9286,
+        "S": 0.9196
+      },
+      "per_angle_acc_tta": {
+        "FL": 0.8919,
+        "FR": 0.8214,
+        "HL": 0.9286,
+        "HR": 0.9107,
+        "S": 0.9196
+      },
+      "pre_act_stats": {
+        "exact_dead_frac": 0.0,
+        "neg_frac": 0.5318,
+        "mean": 0.0004,
+        "std": 0.0558,
+        "max": 0.4603
+      },
+      "post_act_stats": {
+        "exact_dead_frac": 0.0,
+        "neg_frac": 0.6334,
+        "mean": 0.0373,
+        "std": 0.2515,
+        "max": 3.0929
+      },
+      "exact_dead_shift": 0.0,
+      "neg_frac_shift": 0.1016,
+      "std_ratio": 4.51,
+      "training_time_s": 276.68
+    },
+    {
+      "name": "3_kdef_silu_eca_coshead",
+      "description": "KDEFNet + SiLU + ECA-Net + Strip Pool + Cosine Normalized Classifier Head (1.24M params, scale=16)",
+      "num_params": 1239335,
+      "best_epoch": 76,
+      "val_macro_f1_single": 0.8859,
+      "val_accuracy_single": 0.8873,
+      "val_macro_f1_tta": 0.8858,
+      "val_accuracy_tta": 0.8873,
+      "epoch_15_val_f1": 0.7308,
+      "train_f1": 0.9973,
+      "train_val_gap": 0.1114,
+      "recall_spread_single": 0.2375,
+      "recall_spread_tta": 0.2375,
+      "per_class_recall_single": {
         "angry": 0.8875,
-        "disgust": 0.8354,
-        "fear": 0.7875,
+        "disgust": 0.8987,
+        "fear": 0.7625,
         "happy": 1.0,
-        "neutral": 0.9125,
+        "neutral": 0.925,
+        "sad": 0.7875,
+        "surprise": 0.95
+      },
+      "per_class_recall_tta": {
+        "angry": 0.8625,
+        "disgust": 0.8987,
+        "fear": 0.7625,
+        "happy": 1.0,
+        "neutral": 0.9375,
         "sad": 0.7875,
         "surprise": 0.9625
       },
-      "train_f1": 0.9925,
-      "train_val_gap": 0.1118,
-      "epoch_15_val_f1": 0.5981,
-      "training_time_s": 243.7,
+      "asymmetry_gap_single": 0.0491,
+      "asymmetry_gap_tta": 0.0669,
+      "per_angle_acc_single": {
+        "FL": 0.9279,
+        "FR": 0.8304,
+        "HL": 0.8661,
+        "HR": 0.8929,
+        "S": 0.9196
+      },
+      "per_angle_acc_tta": {
+        "FL": 0.8829,
+        "FR": 0.8304,
+        "HL": 0.875,
+        "HR": 0.9196,
+        "S": 0.9286
+      },
       "pre_act_stats": {
-        "dead_frac": 0.525,
-        "mean": 0.7079,
-        "std": 1.1561,
-        "max": 11.2652,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
+        "exact_dead_frac": 0.0,
+        "neg_frac": 0.5406,
+        "mean": 0.0055,
+        "std": 0.0785,
+        "max": 0.565
       },
       "post_act_stats": {
-        "dead_frac": 0.6655,
-        "mean": 0.2772,
-        "std": 0.8188,
-        "max": 10.9328,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
+        "exact_dead_frac": 0.0,
+        "neg_frac": 0.6156,
+        "mean": 0.0536,
+        "std": 0.337,
+        "max": 5.5572
       },
-      "config": {
-        "name": "2_plain_kdefnet_aspect_crop",
-        "description": "Plain KDEFNet with Aspect-Aware Studio Face Crop (eliminating hair top/shoulders background)",
-        "act_type": "relu",
-        "use_res": false,
-        "use_se": false,
-        "pool_type": "avg",
-        "drop2d": 0.0
-      }
+      "exact_dead_shift": 0.0,
+      "neg_frac_shift": 0.075,
+      "std_ratio": 4.29,
+      "training_time_s": 278.15
     },
     {
-      "name": "3_plain_kdefnet_crop_clahe",
-      "description": "Plain KDEFNet with Aspect-Aware Crop + CLAHE (micro-contrast on brows/mouth creases)",
-      "num_params": 1240487,
-      "best_epoch": 36,
-      "val_macro_f1": 0.8648,
-      "val_accuracy": 0.864,
-      "val_recall_spread": 0.203,
-      "per_class_recall": {
-        "angry": 0.8875,
-        "disgust": 0.7595,
-        "fear": 0.825,
-        "happy": 0.9625,
-        "neutral": 0.9125,
-        "sad": 0.8,
-        "surprise": 0.9
-      },
-      "train_f1": 0.9907,
-      "train_val_gap": 0.126,
-      "epoch_15_val_f1": 0.708,
-      "training_time_s": 240.31,
-      "pre_act_stats": {
-        "dead_frac": 0.5232,
-        "mean": 0.8769,
-        "std": 1.4306,
-        "max": 13.6178,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
-      },
-      "post_act_stats": {
-        "dead_frac": 0.6768,
-        "mean": 0.2707,
-        "std": 0.8839,
-        "max": 12.4168,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
-      },
-      "config": {
-        "name": "3_plain_kdefnet_crop_clahe",
-        "description": "Plain KDEFNet with Aspect-Aware Crop + CLAHE (micro-contrast on brows/mouth creases)",
-        "act_type": "relu",
-        "use_res": false,
-        "use_se": false,
-        "pool_type": "avg",
-        "drop2d": 0.0
-      }
-    },
-    {
-      "name": "4_res_kdefnet",
-      "description": "ResKDEFNet: Adding Residual Skip Connections across Stages 1-4 (ReLU, AvgPool)",
-      "num_params": 1284487,
-      "best_epoch": 36,
-      "val_macro_f1": 0.8767,
-      "val_accuracy": 0.8766,
-      "val_recall_spread": 0.2125,
-      "per_class_recall": {
-        "angry": 0.875,
-        "disgust": 0.8734,
-        "fear": 0.775,
+      "name": "4_kdef_stem2ch_eca_strip",
+      "description": "KDEFNet + Parallel 3x3/5x5 Stem + SiLU + ECA-Net + Compact Strip Pool (2,1) (1.24M params)",
+      "num_params": 1239597,
+      "best_epoch": 50,
+      "val_macro_f1_single": 0.9046,
+      "val_accuracy_single": 0.9052,
+      "val_macro_f1_tta": 0.9174,
+      "val_accuracy_tta": 0.9177,
+      "epoch_15_val_f1": 0.8186,
+      "train_f1": 0.9985,
+      "train_val_gap": 0.0939,
+      "recall_spread_single": 0.175,
+      "recall_spread_tta": 0.1625,
+      "per_class_recall_single": {
+        "angry": 0.8125,
+        "disgust": 0.8861,
+        "fear": 0.8125,
         "happy": 0.9875,
-        "neutral": 0.875,
-        "sad": 0.8375,
-        "surprise": 0.9125
+        "neutral": 0.9375,
+        "sad": 0.925,
+        "surprise": 0.975
       },
-      "train_f1": 0.9859,
-      "train_val_gap": 0.1092,
-      "epoch_15_val_f1": 0.471,
-      "training_time_s": 288.48,
+      "per_class_recall_tta": {
+        "angry": 0.875,
+        "disgust": 0.8861,
+        "fear": 0.8375,
+        "happy": 1.0,
+        "neutral": 0.95,
+        "sad": 0.9125,
+        "surprise": 0.9625
+      },
+      "asymmetry_gap_single": 0.0669,
+      "asymmetry_gap_tta": 0.067,
+      "per_angle_acc_single": {
+        "FL": 0.8739,
+        "FR": 0.8661,
+        "HL": 0.9286,
+        "HR": 0.9375,
+        "S": 0.9196
+      },
+      "per_angle_acc_tta": {
+        "FL": 0.9009,
+        "FR": 0.875,
+        "HL": 0.9375,
+        "HR": 0.9464,
+        "S": 0.9286
+      },
       "pre_act_stats": {
-        "dead_frac": 0.4981,
-        "mean": 3.0061,
-        "std": 4.5303,
-        "max": 35.6965,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
+        "exact_dead_frac": 0.0,
+        "neg_frac": 0.4638,
+        "mean": 0.0292,
+        "std": 0.1125,
+        "max": 1.0224
       },
       "post_act_stats": {
-        "dead_frac": 0.7749,
-        "mean": 0.1928,
-        "std": 0.6759,
-        "max": 9.6175,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
+        "exact_dead_frac": 0.0,
+        "neg_frac": 0.6359,
+        "mean": 0.0381,
+        "std": 0.2336,
+        "max": 3.5609
       },
-      "config": {
-        "name": "4_res_kdefnet",
-        "description": "ResKDEFNet: Adding Residual Skip Connections across Stages 1-4 (ReLU, AvgPool)",
-        "act_type": "relu",
-        "use_res": true,
-        "use_se": false,
-        "pool_type": "avg",
-        "drop2d": 0.0
-      }
-    },
-    {
-      "name": "5_res_se_kdefnet",
-      "description": "ResSENet: Residual Connections + Squeeze-and-Excitation (SE) Channel Attention (ReLU, AvgPool)",
-      "num_params": 1306503,
-      "best_epoch": 33,
-      "val_macro_f1": 0.8055,
-      "val_accuracy": 0.8086,
-      "val_recall_spread": 0.375,
-      "per_class_recall": {
-        "angry": 0.825,
-        "disgust": 0.7975,
-        "fear": 0.5875,
-        "happy": 0.9625,
-        "neutral": 0.825,
-        "sad": 0.7375,
-        "surprise": 0.925
-      },
-      "train_f1": 0.9571,
-      "train_val_gap": 0.1516,
-      "epoch_15_val_f1": 0.4394,
-      "training_time_s": 324.13,
-      "pre_act_stats": {
-        "dead_frac": 0.5219,
-        "mean": 1.7537,
-        "std": 2.6287,
-        "max": 19.9249,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
-      },
-      "post_act_stats": {
-        "dead_frac": 0.63,
-        "mean": 0.323,
-        "std": 0.9276,
-        "max": 19.4906,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
-      },
-      "config": {
-        "name": "5_res_se_kdefnet",
-        "description": "ResSENet: Residual Connections + Squeeze-and-Excitation (SE) Channel Attention (ReLU, AvgPool)",
-        "act_type": "relu",
-        "use_res": true,
-        "use_se": true,
-        "pool_type": "avg",
-        "drop2d": 0.0
-      }
-    },
-    {
-      "name": "6_res_se_silu",
-      "description": "ResSENet with SiLU (Swish) Activation (eliminating ReLU dead neurons in Stage 4)",
-      "num_params": 1306503,
-      "best_epoch": 37,
-      "val_macro_f1": 0.8325,
-      "val_accuracy": 0.8336,
-      "val_recall_spread": 0.25,
-      "per_class_recall": {
-        "angry": 0.7625,
-        "disgust": 0.7975,
-        "fear": 0.7125,
-        "happy": 0.9625,
-        "neutral": 0.8375,
-        "sad": 0.8375,
-        "surprise": 0.925
-      },
-      "train_f1": 0.9847,
-      "train_val_gap": 0.1522,
-      "epoch_15_val_f1": 0.5488,
-      "training_time_s": 334.16,
-      "pre_act_stats": {
-        "dead_frac": 0.5207,
-        "mean": 1.3521,
-        "std": 2.287,
-        "max": 18.5957,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
-      },
-      "post_act_stats": {
-        "dead_frac": 0.6608,
-        "mean": 0.1043,
-        "std": 0.8215,
-        "max": 16.6084,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
-      },
-      "config": {
-        "name": "6_res_se_silu",
-        "description": "ResSENet with SiLU (Swish) Activation (eliminating ReLU dead neurons in Stage 4)",
-        "act_type": "silu",
-        "use_res": true,
-        "use_se": true,
-        "pool_type": "avg",
-        "drop2d": 0.0
-      }
-    },
-    {
-      "name": "7_res_se_leakyrelu",
-      "description": "ResSENet with LeakyReLU(0.1) Activation (non-zero negative gradient flow)",
-      "num_params": 1306503,
-      "best_epoch": 42,
-      "val_macro_f1": 0.8101,
-      "val_accuracy": 0.8086,
-      "val_recall_spread": 0.25,
-      "per_class_recall": {
-        "angry": 0.7875,
-        "disgust": 0.8228,
-        "fear": 0.75,
-        "happy": 0.9625,
-        "neutral": 0.7125,
-        "sad": 0.75,
-        "surprise": 0.875
-      },
-      "train_f1": 0.9739,
-      "train_val_gap": 0.1638,
-      "epoch_15_val_f1": 0.3147,
-      "training_time_s": 325.08,
-      "pre_act_stats": {
-        "dead_frac": 0.5152,
-        "mean": 1.6049,
-        "std": 2.8268,
-        "max": 21.2124,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
-      },
-      "post_act_stats": {
-        "dead_frac": 0.6532,
-        "mean": 0.2389,
-        "std": 0.8398,
-        "max": 16.9528,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
-      },
-      "config": {
-        "name": "7_res_se_leakyrelu",
-        "description": "ResSENet with LeakyReLU(0.1) Activation (non-zero negative gradient flow)",
-        "act_type": "leaky_relu",
-        "use_res": true,
-        "use_se": true,
-        "pool_type": "avg",
-        "drop2d": 0.0
-      }
-    },
-    {
-      "name": "8_kdef_res_se_net_dualpool_final",
-      "description": "KDEFResSENet (Final Core Architecture): Res + SE Attention + SiLU + Dual Pooling (Avg+Max) + Crop + CLAHE",
-      "num_params": 1372039,
-      "best_epoch": 45,
-      "val_macro_f1": 0.829,
-      "val_accuracy": 0.8283,
-      "val_recall_spread": 0.2375,
-      "per_class_recall": {
-        "angry": 0.85,
-        "disgust": 0.8101,
-        "fear": 0.8,
-        "happy": 0.975,
-        "neutral": 0.7375,
-        "sad": 0.8,
-        "surprise": 0.825
-      },
-      "train_f1": 0.9797,
-      "train_val_gap": 0.1507,
-      "epoch_15_val_f1": 0.7309,
-      "training_time_s": 332.13,
-      "pre_act_stats": {
-        "dead_frac": 0.5043,
-        "mean": 0.587,
-        "std": 1.1949,
-        "max": 9.0277,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
-      },
-      "post_act_stats": {
-        "dead_frac": 0.6163,
-        "mean": 0.0459,
-        "std": 0.5388,
-        "max": 13.277,
-        "shape": [
-          1,
-          256,
-          16,
-          16
-        ]
-      },
-      "config": {
-        "name": "8_kdef_res_se_net_dualpool_final",
-        "description": "KDEFResSENet (Final Core Architecture): Res + SE Attention + SiLU + Dual Pooling (Avg+Max) + Crop + CLAHE",
-        "act_type": "silu",
-        "use_res": true,
-        "use_se": true,
-        "pool_type": "dual",
-        "drop2d": 0.05
-      }
+      "exact_dead_shift": 0.0,
+      "neg_frac_shift": 0.1721,
+      "std_ratio": 2.08,
+      "training_time_s": 289.12
     }
   ]
 }

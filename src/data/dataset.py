@@ -25,6 +25,8 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
+from src.preprocessing.alignment import preprocess_kdef_image
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -54,8 +56,9 @@ EMOTION_CODE_MAP = {
 }
 
 # Default dataset normalization constants for aspect-cropped CLAHE grayscale 128x128
-DEFAULT_KDEF_MEAN = 0.5402
-DEFAULT_KDEF_STD = 0.2625
+# Strictly computed on the clean train split (3,349 images, excluding 10 black frames)
+DEFAULT_KDEF_MEAN = 0.407835
+DEFAULT_KDEF_STD = 0.242375
 
 
 def parse_kdef_filename(filename: str) -> Dict[str, str]:
@@ -195,53 +198,34 @@ class KDEFDataset(Dataset):
 
     def _preprocess_raw_image(self, img_arr: np.ndarray) -> np.ndarray:
         """
-        Applies aspect-aware cropping and CLAHE contrast enhancement.
+        Applies aspect-aware cropping and CLAHE contrast enhancement via preprocess_kdef_image.
         img_arr: 2D uint8 numpy array (H, W).
         """
-        h, w = img_arr.shape[:2]
-
-        # 1. Aspect-aware studio face crop: remove studio background and shoulders
-        if self.use_crop:
-            x1 = int(round(self.crop_box[0] * w))
-            y1 = int(round(self.crop_box[1] * h))
-            x2 = int(round(self.crop_box[2] * w))
-            y2 = int(round(self.crop_box[3] * h))
-            img_arr = img_arr[y1:y2, x1:x2]
-
-        # 2. CLAHE (Contrast Limited Adaptive Histogram Equalization)
-        if self.clahe is not None:
-            clahe_img = self.clahe.apply(img_arr)
-            if self.clahe_blend < 1.0:
-                img_arr = np.clip(
-                    (1.0 - self.clahe_blend) * img_arr + self.clahe_blend * clahe_img,
-                    0, 255
-                ).astype(np.uint8)
-            else:
-                img_arr = clahe_img
-
-        return img_arr
+        return preprocess_kdef_image(
+            img_arr,
+            use_aspect_crop=self.use_crop,
+            use_clahe=self.use_clahe,
+            clahe_clip=self.clahe_clip,
+            clahe_blend=self.clahe_blend,
+            img_size=self.img_size
+        )
 
     def __getitem__(self, idx: int):
         fpath, label, meta = self.samples[idx]
 
-        # Load raw grayscale image
-        with Image.open(fpath) as pil_im:
-            img_arr = np.asarray(pil_im.convert("L"), dtype=np.uint8)
-
-        # Apply preprocessing
-        proc_arr = self._preprocess_raw_image(img_arr)
-
-        # Resize to target resolution
-        proc_pil = Image.fromarray(proc_arr).resize(
-            (self.img_size, self.img_size),
-            resample=Image.Resampling.BILINEAR
+        # Standardized preprocessing with aspect crop, cv2.INTER_AREA & CLAHE
+        proc_arr = preprocess_kdef_image(
+            fpath,
+            use_aspect_crop=self.use_crop,
+            use_clahe=self.use_clahe,
+            clahe_clip=self.clahe_clip,
+            clahe_blend=self.clahe_blend,
+            img_size=self.img_size
         )
 
-        # Convert to tensor [0, 1]
-        if self.in_channels == 1:
-            tensor = transforms.functional.to_tensor(proc_pil)  # (1, H, W)
-        else:
-            tensor = transforms.functional.to_tensor(proc_pil.convert("RGB"))  # (3, H, W)
+        tensor = torch.from_numpy(proc_arr).unsqueeze(0).float() / 255.0  # (1, H, W)
+        if self.in_channels == 3:
+            tensor = tensor.repeat(3, 1, 1)
 
         if self.transform is not None:
             tensor = self.transform(tensor)

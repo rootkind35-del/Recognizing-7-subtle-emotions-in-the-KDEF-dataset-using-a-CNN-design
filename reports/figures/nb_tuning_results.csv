@@ -1,9 +1,5 @@
-lr,batch_size,aug_mode,best_val_f1,best_epoch
-0.0003,32,khong_erasing,0.4163494485298055,14
-0.0003,32,du,0.26455360758123797,12
-0.001,32,du,0.17560017948717438,9
-0.0003,64,khong_erasing,0.16729842586429938,5
-0.001,64,du,0.1378727962638942,5
-0.001,32,khong_erasing,0.1305012073362417,2
-0.0003,64,du,0.12079811945806436,1
-0.001,64,khong_erasing,0.10990315526398,2
+config_name,model,lr,use_crop,use_clahe,use_flip_kl,use_mixup,best_val_f1,best_epoch
+4_stem2ch_flipkl_mixup_ema,KDEF_Stem2Ch_ECA_Strip,0.001,True,True,True,True,0.9067737152654366,24
+3_stem2ch_crop_cosine,KDEF_Stem2Ch_ECA_Strip,0.001,True,True,False,False,0.8918568115757753,30
+2_kdefnet_crop_cosine,KDEFNet,0.001,True,True,False,False,0.8412712277067352,17
+1_kdefnet_raw_plateau,KDEFNet,0.0003,False,False,False,False,0.8242052052317571,26

@@ -1,91 +1,132 @@
 {
-  "accuracy": 0.8275510204081633,
-  "macro_f1": 0.8274646026849994,
-  "weighted_f1": 0.8274646026849994,
+  "accuracy": 0.8581632653061224,
+  "macro_f1": 0.8587822593251283,
+  "weighted_f1": 0.8587822593251282,
   "per_class_recall": {
-    "angry": 0.7142857142857143,
-    "disgust": 0.8785714285714286,
-    "fear": 0.7142857142857143,
-    "happy": 0.9928571428571429,
-    "neutral": 0.8714285714285714,
-    "sad": 0.7714285714285715,
-    "surprise": 0.85
+    "angry": 0.7071428571428572,
+    "disgust": 0.8285714285714286,
+    "fear": 0.7785714285714286,
+    "happy": 1.0,
+    "neutral": 0.9285714285714286,
+    "sad": 0.8928571428571429,
+    "surprise": 0.8714285714285714
   },
-  "recall_spread": 0.2785714285714286,
+  "recall_spread": 0.2928571428571428,
   "confusion_matrix": [
     [
-      100,
-      12,
-      13,
-      0,
+      99,
       9,
-      6,
-      0
+      9,
+      0,
+      10,
+      10,
+      3
     ],
     [
       3,
-      123,
-      3,
+      116,
       0,
       0,
-      11,
+      0,
+      21,
       0
     ],
     [
       1,
+      0,
+      109,
+      0,
+      2,
+      14,
+      14
+    ],
+    [
+      0,
+      0,
+      0,
+      140,
+      0,
+      0,
+      0
+    ],
+    [
+      3,
+      0,
+      0,
+      0,
+      130,
       7,
-      100,
-      1,
-      2,
-      11,
-      18
-    ],
-    [
-      0,
-      1,
-      0,
-      139,
-      0,
-      0,
       0
     ],
     [
+      1,
       4,
+      8,
       0,
       2,
+      125,
+      0
+    ],
+    [
       0,
-      122,
+      0,
       12,
-      0
-    ],
-    [
-      2,
-      13,
-      6,
       0,
-      11,
-      108,
-      0
-    ],
-    [
       1,
-      0,
-      17,
-      0,
-      2,
-      1,
-      119
+      5,
+      122
     ]
   ],
   "device": "cuda (NVIDIA GeForce RTX 4060 Laptop GPU)",
-  "epochs": 91,
-  "model_chosen": "full_120ep",
+  "epochs": 100,
+  "model_chosen": "kdef_stem2ch_eca_strip_80ep + finetune_20ep",
   "best_config": {
-    "lr": 0.0003,
-    "batch_size": 32.0,
-    "aug_mode": "khong_erasing",
-    "weight_decay": 0.0001,
-    "label_smooth": 0.1,
-    "sched_patience": 5.0
-  }
+    "lr": 0.001,
+    "min_lr": 1e-06,
+    "warmup_epochs": 5,
+    "batch_size": 32,
+    "aug_mode": "enhanced",
+    "scheduler": "warmup_cosine",
+    "weight_decay": 0.0005,
+    "label_smooth": 0.08,
+    "use_crop": true,
+    "use_clahe": true,
+    "mean": 0.4056757390499115,
+    "std": 0.24074745178222656,
+    "use_flip_kl": true,
+    "flip_kl_weight": 0.4,
+    "use_mixup": true,
+    "mixup_alpha": 0.2,
+    "use_ema": true,
+    "ema_decay": 0.996,
+    "val_tta": true
+  },
+  "single_view_metrics": {
+    "accuracy": 0.8622448979591837,
+    "macro_f1": 0.8628570703725741
+  },
+  "flip_tta_metrics": {
+    "accuracy": 0.8520408163265306,
+    "macro_f1": 0.8525625459005093
+  },
+  "ms4_tta_metrics": {
+    "accuracy": 0.8581632653061224,
+    "macro_f1": 0.8587822593251283
+  },
+  "chosen_eval_mode": "ms4_tta",
+  "angle_accuracy": {
+    "FL": 0.8571,
+    "FR": 0.8367,
+    "HL": 0.8776,
+    "HR": 0.8827,
+    "S": 0.8367
+  },
+  "angle_accuracy_tta": {
+    "FL": 0.852,
+    "FR": 0.8214,
+    "HL": 0.8673,
+    "HR": 0.8827,
+    "S": 0.8367
+  },
+  "pose_asymmetry_gap": 0.0535714285714286
 }

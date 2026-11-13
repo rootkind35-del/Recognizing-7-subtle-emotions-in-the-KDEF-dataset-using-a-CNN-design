@@ -22,6 +22,7 @@ from PIL import Image
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 # Add project root to sys.path
@@ -29,6 +30,7 @@ project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
+from src.preprocessing.alignment import preprocess_kdef_image
 from src.data.dataset import (
     ANGLE_NAMES,
     CLASS_NAMES,
@@ -37,7 +39,7 @@ from src.data.dataset import (
     KDEFDataset,
     get_transforms
 )
-from src.models.model import KDEFResSENet, build_model, load_kdef_checkpoint
+from src.models.model import KDEF_Stem2Ch_ECA_Strip, KDEFResSENet, build_model, load_kdef_checkpoint
 
 
 def measure_activation_statistics(
@@ -51,46 +53,50 @@ def measure_activation_statistics(
     std: float = DEFAULT_KDEF_STD
 ) -> Dict[str, float]:
     """
-    Measures Stage 4 pre-pool activation stats on a specific probe sample (e.g., AF01HAHR.JPG).
-    Directly corresponds to `features.3.5` ReLU probe in notebooks/CNN_KDEF_FER.ipynb.
+    Measures activation stats across stages (especially Stage 4 pre-pool) on a specific probe sample (e.g., AF01HAHR.JPG).
+    Supports both KDEF_Stem2Ch_ECA_Strip (probe_activations) and baseline KDEFNet (extract_stage4_pre_pool).
     """
     model.eval()
     sample_path = Path(sample_path)
     if not sample_path.exists():
         return {"dead_frac": 0.0, "mean": 0.0, "std": 0.0, "max": 0.0}
 
-    with Image.open(sample_path) as pil_im:
-        img_arr = np.asarray(pil_im.convert("L"), dtype=np.uint8)
-
-    # Preprocessing
-    if use_crop:
-        h, w = img_arr.shape[:2]
-        img_arr = img_arr[int(round(0.16 * h)):int(round(0.86 * h)), int(round(0.04 * w)):int(round(0.96 * w))]
-
-    if use_clahe:
-        import cv2
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        eq = clahe.apply(img_arr)
-        img_arr = np.clip(0.2 * img_arr + 0.8 * eq, 0, 255).astype(np.uint8)
-
-    proc_pil = Image.fromarray(img_arr).resize((img_size, img_size), resample=Image.Resampling.BILINEAR)
-    tensor = torch.from_numpy(np.asarray(proc_pil, dtype=np.float32) / 255.0).unsqueeze(0).unsqueeze(0)
+    proc_arr = preprocess_kdef_image(
+        sample_path,
+        use_aspect_crop=use_crop,
+        use_clahe=use_clahe,
+        clahe_clip=2.0,
+        clahe_blend=0.8,
+        img_size=img_size
+    )
+    tensor = torch.from_numpy(proc_arr).unsqueeze(0).unsqueeze(0).float() / 255.0
     tensor = ((tensor - mean) / std).to(device)
 
     with torch.no_grad():
-        if hasattr(model, "extract_stage4_pre_pool"):
+        if hasattr(model, "probe_activations"):
+            probe = model.probe_activations(tensor)
+            s4 = probe.get("stage4", {})
+            return {
+                "dead_frac": round(s4.get("exact_dead_frac", 0.0), 4),
+                "neg_frac": round(s4.get("neg_frac", 0.0), 4),
+                "mean": round(s4.get("mean", 0.0), 4),
+                "std": round(s4.get("std", 0.0), 4),
+                "stages": probe
+            }
+        elif hasattr(model, "extract_stage4_pre_pool"):
             act = model.extract_stage4_pre_pool(tensor)
+            arr = act.cpu().numpy().ravel()
+            dead_frac = float((np.abs(arr) < 1e-6).mean())
+            neg_frac = float((arr <= 0.0).mean())
+            return {
+                "dead_frac": round(dead_frac, 4),
+                "neg_frac": round(neg_frac, 4),
+                "mean": round(float(arr.mean()), 4),
+                "std": round(float(arr.std()), 4),
+                "max": round(float(arr.max()), 4)
+            }
         else:
             return {"dead_frac": 0.0, "mean": 0.0, "std": 0.0, "max": 0.0}
-
-    arr = act.cpu().numpy().ravel()
-    dead_frac = float((arr <= 0.0).mean())
-    return {
-        "dead_frac": round(dead_frac, 4),
-        "mean": round(float(arr.mean()), 4),
-        "std": round(float(arr.std()), 4),
-        "max": round(float(arr.max()), 4)
-    }
 
 
 def evaluate_split(
@@ -98,6 +104,7 @@ def evaluate_split(
     data_dir: Optional[Union[str, Path]] = None,
     split: str = "test",
     use_tta: bool = True,
+    tta_mode: str = "flip",
     use_crop: bool = True,
     use_clahe: bool = True,
     img_size: int = 128,
@@ -109,6 +116,7 @@ def evaluate_split(
 ) -> Dict:
     """
     Evaluates model on specified split (default: 'test').
+    Supports Single-View, Flip-TTA, and MS4-TTA (multi-scale 4-view TTA).
     Returns comprehensive metrics dictionary matching reports/test_metrics.json schema.
     """
     if device is None:
@@ -143,15 +151,31 @@ def evaluate_split(
     all_angles = []
     all_subjects = []
 
+    # Normalize tta_mode
+    effective_tta = tta_mode.lower() if use_tta else "none"
+
     with torch.no_grad():
         for xb, yb, meta in loader:
             xb = xb.to(device)
-            if use_tta:
-                # Horizontal flip Test-Time Augmentation
+            if effective_tta in ["ms4", "multiscale4"]:
+                xb_flip = torch.flip(xb, dims=[3])
+                margin = 4
+                xb_crop = F.interpolate(
+                    xb[:, :, margin : img_size - margin, margin : img_size - margin],
+                    size=(img_size, img_size),
+                    mode="bilinear",
+                    align_corners=False,
+                )
+                xb_crop_flip = torch.flip(xb_crop, dims=[3])
+                logits = (
+                    0.35 * model(xb)
+                    + 0.35 * model(xb_flip)
+                    + 0.15 * model(xb_crop)
+                    + 0.15 * model(xb_crop_flip)
+                )
+            elif effective_tta in ["flip", "flip2"]:
                 xb_flipped = torch.flip(xb, dims=[3])
-                logits_orig = model(xb)
-                logits_flip = model(xb_flipped)
-                logits = 0.5 * (logits_orig + logits_flip)
+                logits = 0.5 * (model(xb) + model(xb_flipped))
             else:
                 logits = model(xb)
 
@@ -266,6 +290,7 @@ def evaluate_checkpoint(
     data_dir: Optional[Union[str, Path]] = None,
     split: str = "test",
     use_tta: bool = True,
+    tta_mode: str = "flip",
     device: Optional[torch.device] = None
 ) -> Dict:
     """Loads a checkpoint (optimized core or notebook) and evaluates it on the specified split."""
@@ -279,6 +304,7 @@ def evaluate_checkpoint(
         data_dir=data_dir,
         split=split,
         use_tta=use_tta,
+        tta_mode=tta_mode,
         use_crop=meta["use_crop"],
         use_clahe=meta["use_clahe"],
         img_size=meta["img_size"],
@@ -295,12 +321,14 @@ if __name__ == "__main__":
     parser.add_argument("--data_dir", type=str, default=None)
     parser.add_argument("--split", type=str, default="test")
     parser.add_argument("--no_tta", action="store_true")
+    parser.add_argument("--tta_mode", type=str, default="flip", choices=["none", "flip", "ms4", "multiscale4"])
     args = parser.parse_args()
 
     res = evaluate_checkpoint(
         checkpoint_path=args.checkpoint,
         data_dir=args.data_dir,
         split=args.split,
-        use_tta=not args.no_tta
+        use_tta=not args.no_tta,
+        tta_mode=args.tta_mode
     )
     print(json.dumps(res, indent=2))

@@ -1,171 +1,132 @@
 {
-  "accuracy": 0.8377551020408164,
-  "macro_f1": 0.8369274261563443,
-  "weighted_f1": 0.8369274261563443,
+  "accuracy": 0.8581632653061224,
+  "macro_f1": 0.8587822593251283,
+  "weighted_f1": 0.8587822593251282,
   "per_class_recall": {
-    "angry": 0.7285714285714285,
-    "disgust": 0.7714285714285715,
-    "fear": 0.6928571428571428,
-    "happy": 0.9928571428571429,
-    "neutral": 0.9142857142857143,
-    "sad": 0.8714285714285714,
-    "surprise": 0.8928571428571429
+    "angry": 0.7071428571428572,
+    "disgust": 0.8285714285714286,
+    "fear": 0.7785714285714286,
+    "happy": 1.0,
+    "neutral": 0.9285714285714286,
+    "sad": 0.8928571428571429,
+    "surprise": 0.8714285714285714
   },
-  "per_class_precision": {
-    "angry": 0.8571428571428571,
-    "disgust": 0.8852459016393442,
-    "fear": 0.8151260504201681,
-    "happy": 0.9586206896551724,
-    "neutral": 0.8888888888888888,
-    "sad": 0.6853932584269663,
-    "surprise": 0.8169934640522876
-  },
-  "per_class_f1": {
-    "angry": 0.7876447876447876,
-    "disgust": 0.8244274809160306,
-    "fear": 0.749034749034749,
-    "happy": 0.9754385964912282,
-    "neutral": 0.9014084507042254,
-    "sad": 0.7672955974842768,
-    "surprise": 0.8532423208191127
-  },
-  "recall_spread": 0.30000000000000004,
+  "recall_spread": 0.2928571428571428,
   "confusion_matrix": [
     [
-      102,
-      11,
+      99,
+      9,
       9,
       0,
-      6,
-      8,
-      4
+      10,
+      10,
+      3
     ],
     [
-      5,
-      108,
-      0,
-      4,
-      0,
-      23,
-      0
-    ],
-    [
-      2,
-      0,
-      97,
-      2,
-      2,
-      13,
-      24
-    ],
-    [
-      0,
-      0,
-      1,
-      139,
-      0,
-      0,
-      0
-    ],
-    [
-      4,
-      0,
-      0,
-      0,
-      128,
-      8,
-      0
-    ],
-    [
-      6,
       3,
+      116,
+      0,
+      0,
+      0,
+      21,
+      0
+    ],
+    [
       1,
       0,
+      109,
+      0,
+      2,
+      14,
+      14
+    ],
+    [
+      0,
+      0,
+      0,
+      140,
+      0,
+      0,
+      0
+    ],
+    [
+      3,
+      0,
+      0,
+      0,
+      130,
+      7,
+      0
+    ],
+    [
+      1,
+      4,
       8,
-      122,
+      0,
+      2,
+      125,
       0
     ],
     [
       0,
       0,
-      11,
+      12,
       0,
-      0,
-      4,
-      125
+      1,
+      5,
+      122
     ]
   ],
   "device": "cuda (NVIDIA GeForce RTX 4060 Laptop GPU)",
-  "epochs": 80,
-  "best_epoch": 49,
-  "model_chosen": "KDEFNet_aspect_crop_warmup_cosine",
+  "epochs": 100,
+  "model_chosen": "kdef_stem2ch_eca_strip_80ep + finetune_20ep",
   "best_config": {
-    "architecture": "KDEFNet (4-block CNN with Aspect-Aware Studio Face Crop [0.04W:0.96W, 0.16H:0.86H] + CLAHE)",
-    "num_params": 1240487,
     "lr": 0.001,
     "min_lr": 1e-06,
     "warmup_epochs": 5,
-    "scheduler": "LinearWarmup_CosineAnnealing",
     "batch_size": 32,
-    "weight_decay": 0.0001,
-    "label_smoothing": 0.1,
-    "preprocessing": "Aspect-Aware Crop [0.04W:0.96W, 0.16H:0.86H] + CLAHE(clip=2.0, blend=0.8)",
-    "augmentation": "Enhanced (Flip + Affine + Perspective + ColorJitter)",
-    "inference": "Flip-TTA"
+    "aug_mode": "enhanced",
+    "scheduler": "warmup_cosine",
+    "weight_decay": 0.0005,
+    "label_smooth": 0.08,
+    "use_crop": true,
+    "use_clahe": true,
+    "mean": 0.4056757390499115,
+    "std": 0.24074745178222656,
+    "use_flip_kl": true,
+    "flip_kl_weight": 0.4,
+    "use_mixup": true,
+    "mixup_alpha": 0.2,
+    "use_ema": true,
+    "ema_decay": 0.996,
+    "val_tta": true
   },
   "single_view_metrics": {
-    "accuracy": 0.8438775510204082,
-    "macro_f1": 0.8435230256450222,
-    "recall_spread": 0.2928571428571429,
-    "pose_asymmetry_gap": 0.025510204081632737,
-    "angle_accuracy": {
-      "FL": 0.8418,
-      "FR": 0.8316,
-      "HL": 0.8469,
-      "HR": 0.8673,
-      "S": 0.8316
-    }
+    "accuracy": 0.8622448979591837,
+    "macro_f1": 0.8628570703725741
   },
+  "flip_tta_metrics": {
+    "accuracy": 0.8520408163265306,
+    "macro_f1": 0.8525625459005093
+  },
+  "ms4_tta_metrics": {
+    "accuracy": 0.8581632653061224,
+    "macro_f1": 0.8587822593251283
+  },
+  "chosen_eval_mode": "ms4_tta",
   "angle_accuracy": {
-    "FL": 0.8418,
-    "FR": 0.8265,
-    "HL": 0.852,
-    "HR": 0.8418,
-    "S": 0.8265
+    "FL": 0.8571,
+    "FR": 0.8367,
+    "HL": 0.8776,
+    "HR": 0.8827,
+    "S": 0.8367
   },
-  "pose_asymmetry_analysis": {
-    "hl_hr_average": 0.8469,
-    "fr_accuracy": 0.8265,
-    "fl_accuracy": 0.8418,
-    "pose_asymmetry_gap": 0.0204,
-    "single_view_gap": 0.0255
+  "angle_accuracy_tta": {
+    "FL": 0.852,
+    "FR": 0.8214,
+    "HL": 0.8673,
+    "HR": 0.8827,
+    "S": 0.8367
   },
-  "train_val_test_gap_analysis": {
-    "train_macro_f1": 0.9967,
-    "val_macro_f1": 0.9115,
-    "test_macro_f1": 0.8369,
-    "train_val_gap": 0.0852,
-    "val_test_gap": 0.0746,
-    "train_test_gap": 0.1598
-  },
-  "convergence_stability": {
-    "epoch_15_val_f1": 0.3882,
-    "epoch_15_train_f1": 0.6145,
-    "epoch_15_gap": 0.2264
-  },
-  "activation_statistics": {
-    "probe_image": "AF01HAHR.JPG",
-    "pre_training": {
-      "dead_frac": 0.5285,
-      "mean": 0.0008,
-      "std": 0.0012,
-      "max": 0.0075
-    },
-    "post_training": {
-      "dead_frac": 0.733,
-      "mean": 0.2369,
-      "std": 0.8302,
-      "max": 11.2494
-    }
-  }
+  "pose_asymmetry_gap": 0.0535714285714286
 }
