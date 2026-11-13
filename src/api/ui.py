@@ -11,13 +11,13 @@ project_root = os.path.abspath(os.path.join(current_dir, "../../"))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from src.api.inference import EmotionRecognizer
+from src.api.inference import EmotionRecognizer, resolve_default_checkpoint
 
 st.set_page_config(page_title="Nhận Dạng Cảm Xúc", layout="centered")
 
 @st.cache_resource
 def load_model():
-    model_path = "checkpoints/best_model.pth"
+    model_path = resolve_default_checkpoint()
     if os.path.exists(model_path):
         return EmotionRecognizer(model_path)
     return None
@@ -28,7 +28,7 @@ st.write("Tải lên một bức ảnh có khuôn mặt để dự đoán cảm 
 recognizer = load_model()
 
 if recognizer is None:
-    st.error("Không tìm thấy mô hình tại `checkpoints/best_model.pth`. Vui lòng huấn luyện mô hình trước.")
+    st.error("Không tìm thấy mô hình tại `checkpoints/optimized_best_model.pt` hoặc `checkpoints/final_model.pt`. Vui lòng huấn luyện mô hình trước.")
 else:
     uploaded_file = st.file_uploader("Chọn ảnh...", type=["jpg", "jpeg", "png"])
     
@@ -50,7 +50,7 @@ else:
             emotion, conf = recognizer.predict_image(img_cv)
             
         if emotion:
-            st.success(f"**Cảm xúc dự đoán:** {emotion} ({conf:.2f}%)")
+            st.success(f"**Cảm xúc dự đoán:** {emotion} ({conf*100:.1f}%)")
         else:
             st.warning("Không phát hiện được khuôn mặt hợp lệ trong ảnh.")
 

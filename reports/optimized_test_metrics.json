@@ -1,0 +1,171 @@
+{
+  "accuracy": 0.8377551020408164,
+  "macro_f1": 0.8369274261563443,
+  "weighted_f1": 0.8369274261563443,
+  "per_class_recall": {
+    "angry": 0.7285714285714285,
+    "disgust": 0.7714285714285715,
+    "fear": 0.6928571428571428,
+    "happy": 0.9928571428571429,
+    "neutral": 0.9142857142857143,
+    "sad": 0.8714285714285714,
+    "surprise": 0.8928571428571429
+  },
+  "per_class_precision": {
+    "angry": 0.8571428571428571,
+    "disgust": 0.8852459016393442,
+    "fear": 0.8151260504201681,
+    "happy": 0.9586206896551724,
+    "neutral": 0.8888888888888888,
+    "sad": 0.6853932584269663,
+    "surprise": 0.8169934640522876
+  },
+  "per_class_f1": {
+    "angry": 0.7876447876447876,
+    "disgust": 0.8244274809160306,
+    "fear": 0.749034749034749,
+    "happy": 0.9754385964912282,
+    "neutral": 0.9014084507042254,
+    "sad": 0.7672955974842768,
+    "surprise": 0.8532423208191127
+  },
+  "recall_spread": 0.30000000000000004,
+  "confusion_matrix": [
+    [
+      102,
+      11,
+      9,
+      0,
+      6,
+      8,
+      4
+    ],
+    [
+      5,
+      108,
+      0,
+      4,
+      0,
+      23,
+      0
+    ],
+    [
+      2,
+      0,
+      97,
+      2,
+      2,
+      13,
+      24
+    ],
+    [
+      0,
+      0,
+      1,
+      139,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      0,
+      0,
+      0,
+      128,
+      8,
+      0
+    ],
+    [
+      6,
+      3,
+      1,
+      0,
+      8,
+      122,
+      0
+    ],
+    [
+      0,
+      0,
+      11,
+      0,
+      0,
+      4,
+      125
+    ]
+  ],
+  "device": "cuda (NVIDIA GeForce RTX 4060 Laptop GPU)",
+  "epochs": 80,
+  "best_epoch": 49,
+  "model_chosen": "KDEFNet_aspect_crop_warmup_cosine",
+  "best_config": {
+    "architecture": "KDEFNet (4-block CNN with Aspect-Aware Studio Face Crop [0.04W:0.96W, 0.16H:0.86H] + CLAHE)",
+    "num_params": 1240487,
+    "lr": 0.001,
+    "min_lr": 1e-06,
+    "warmup_epochs": 5,
+    "scheduler": "LinearWarmup_CosineAnnealing",
+    "batch_size": 32,
+    "weight_decay": 0.0001,
+    "label_smoothing": 0.1,
+    "preprocessing": "Aspect-Aware Crop [0.04W:0.96W, 0.16H:0.86H] + CLAHE(clip=2.0, blend=0.8)",
+    "augmentation": "Enhanced (Flip + Affine + Perspective + ColorJitter)",
+    "inference": "Flip-TTA"
+  },
+  "single_view_metrics": {
+    "accuracy": 0.8438775510204082,
+    "macro_f1": 0.8435230256450222,
+    "recall_spread": 0.2928571428571429,
+    "pose_asymmetry_gap": 0.025510204081632737,
+    "angle_accuracy": {
+      "FL": 0.8418,
+      "FR": 0.8316,
+      "HL": 0.8469,
+      "HR": 0.8673,
+      "S": 0.8316
+    }
+  },
+  "angle_accuracy": {
+    "FL": 0.8418,
+    "FR": 0.8265,
+    "HL": 0.852,
+    "HR": 0.8418,
+    "S": 0.8265
+  },
+  "pose_asymmetry_analysis": {
+    "hl_hr_average": 0.8469,
+    "fr_accuracy": 0.8265,
+    "fl_accuracy": 0.8418,
+    "pose_asymmetry_gap": 0.0204,
+    "single_view_gap": 0.0255
+  },
+  "train_val_test_gap_analysis": {
+    "train_macro_f1": 0.9967,
+    "val_macro_f1": 0.9115,
+    "test_macro_f1": 0.8369,
+    "train_val_gap": 0.0852,
+    "val_test_gap": 0.0746,
+    "train_test_gap": 0.1598
+  },
+  "convergence_stability": {
+    "epoch_15_val_f1": 0.3882,
+    "epoch_15_train_f1": 0.6145,
+    "epoch_15_gap": 0.2264
+  },
+  "activation_statistics": {
+    "probe_image": "AF01HAHR.JPG",
+    "pre_training": {
+      "dead_frac": 0.5285,
+      "mean": 0.0008,
+      "std": 0.0012,
+      "max": 0.0075
+    },
+    "post_training": {
+      "dead_frac": 0.733,
+      "mean": 0.2369,
+      "std": 0.8302,
+      "max": 11.2494
+    }
+  }
+}

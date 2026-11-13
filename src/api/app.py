@@ -17,12 +17,12 @@ import cv2
 import numpy as np
 import io
 from PIL import Image
-from src.api.inference import EmotionRecognizer
+from src.api.inference import EmotionRecognizer, resolve_default_checkpoint
 
 app = FastAPI(title="Emotion Recognition API", description="API nhận dạng cảm xúc khuôn mặt dựa trên KDEF dataset.")
 
-# Khởi tạo recognizer khi app start
-model_path = "checkpoints/best_model.pth"
+# Khởi tạo recognizer khi app start (ưu tiên checkpoint tối ưu cốt lõi hoặc checkpoint notebook)
+model_path = resolve_default_checkpoint()
 recognizer = None
 
 @app.on_event("startup")
