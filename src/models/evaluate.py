@@ -39,7 +39,7 @@ from src.data.dataset import (
     KDEFDataset,
     get_transforms
 )
-from src.models.model import KDEF_Stem2Ch_ECA_Strip, KDEFResSENet, build_model, load_kdef_checkpoint
+from src.models.model import KDEF_Stem2Ch_ECA_Strip, build_model, load_kdef_checkpoint
 
 
 def measure_activation_statistics(
@@ -103,8 +103,8 @@ def evaluate_split(
     model: nn.Module,
     data_dir: Optional[Union[str, Path]] = None,
     split: str = "test",
-    use_tta: bool = True,
-    tta_mode: str = "flip",
+    use_tta: bool = False,
+    tta_mode: str = "none",
     use_crop: bool = True,
     use_clahe: bool = True,
     img_size: int = 128,
@@ -289,11 +289,11 @@ def evaluate_checkpoint(
     checkpoint_path: Union[str, Path],
     data_dir: Optional[Union[str, Path]] = None,
     split: str = "test",
-    use_tta: bool = True,
-    tta_mode: str = "flip",
+    use_tta: bool = False,
+    tta_mode: str = "none",
     device: Optional[torch.device] = None
 ) -> Dict:
-    """Loads a checkpoint (optimized core or notebook) and evaluates it on the specified split."""
+    """Loads the winning KDEF_Stem2Ch_ECA_Strip checkpoint and evaluates it on the specified split."""
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -316,19 +316,18 @@ def evaluate_checkpoint(
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Evaluate KDEF Model Checkpoint")
-    parser.add_argument("--checkpoint", type=str, default="checkpoints/optimized_best_model.pt")
+    parser = argparse.ArgumentParser(description="Evaluate KDEF_Stem2Ch_ECA_Strip Checkpoint")
+    parser.add_argument("--checkpoint", type=str, default="checkpoints/final_model.pt")
     parser.add_argument("--data_dir", type=str, default=None)
     parser.add_argument("--split", type=str, default="test")
-    parser.add_argument("--no_tta", action="store_true")
-    parser.add_argument("--tta_mode", type=str, default="flip", choices=["none", "flip", "ms4", "multiscale4"])
+    parser.add_argument("--tta_mode", type=str, default="none", choices=["none", "flip", "ms4", "multiscale4"])
     args = parser.parse_args()
 
     res = evaluate_checkpoint(
         checkpoint_path=args.checkpoint,
         data_dir=args.data_dir,
         split=args.split,
-        use_tta=not args.no_tta,
+        use_tta=(args.tta_mode != "none"),
         tta_mode=args.tta_mode
     )
     print(json.dumps(res, indent=2))

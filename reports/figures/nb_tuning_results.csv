@@ -1,5 +1,0 @@
-config_name,model,lr,use_crop,use_clahe,use_flip_kl,use_mixup,best_val_f1,best_epoch
-4_stem2ch_flipkl_mixup_ema,KDEF_Stem2Ch_ECA_Strip,0.001,True,True,True,True,0.9067737152654366,24
-3_stem2ch_crop_cosine,KDEF_Stem2Ch_ECA_Strip,0.001,True,True,False,False,0.8918568115757753,30
-2_kdefnet_crop_cosine,KDEFNet,0.001,True,True,False,False,0.8412712277067352,17
-1_kdefnet_raw_plateau,KDEFNet,0.0003,False,False,False,False,0.8242052052317571,26

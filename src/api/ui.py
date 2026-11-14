@@ -28,7 +28,7 @@ st.write("Tải lên một bức ảnh có khuôn mặt để dự đoán cảm 
 recognizer = load_model()
 
 if recognizer is None:
-    st.error("Không tìm thấy mô hình tại `checkpoints/optimized_best_model.pt` hoặc `checkpoints/final_model.pt`. Vui lòng huấn luyện mô hình trước.")
+    st.error("Không tìm thấy mô hình tại `checkpoints/final_model.pt`. Vui lòng chạy notebook huấn luyện mô hình trước.")
 else:
     uploaded_file = st.file_uploader("Chọn ảnh...", type=["jpg", "jpeg", "png"])
     

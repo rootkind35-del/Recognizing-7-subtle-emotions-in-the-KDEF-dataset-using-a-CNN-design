@@ -16,18 +16,17 @@ import torch
 import numpy as np
 from PIL import Image
 from torchvision import transforms
-from src.models.model import load_kdef_checkpoint, KDEF_Stem2Ch_ECA_Strip, KDEFNet
+from src.models.model import load_kdef_checkpoint, KDEF_Stem2Ch_ECA_Strip
 from src.preprocessing.alignment import FaceAligner, preprocess_kdef_image
 from src.utils.device import get_device
 
 DEFAULT_CHECKPOINT_CANDIDATES = (
-    "checkpoints/optimized_best_model.pt",
     "checkpoints/final_model.pt",
 )
 
 
 def resolve_default_checkpoint() -> str:
-    """Trả về đường dẫn checkpoint ưu tiên (tối ưu cốt lõi -> notebook)."""
+    """Trả về đường dẫn checkpoint chuẩn duy nhất (checkpoints/final_model.pt)."""
     for candidate in DEFAULT_CHECKPOINT_CANDIDATES:
         full_path = os.path.join(project_root, candidate)
         if os.path.exists(full_path):
@@ -38,7 +37,7 @@ def resolve_default_checkpoint() -> str:
 
 
 class EmotionRecognizer:
-    def __init__(self, model_path: str = None, use_tta: bool = True):
+    def __init__(self, model_path: str = None, use_tta: bool = False):
         self.device = get_device()
         self.use_tta = use_tta
         resolved_path = model_path or resolve_default_checkpoint()
@@ -76,18 +75,8 @@ class EmotionRecognizer:
         return tensor
 
     def get_gradcam_target_layers(self):
-        """Returns the appropriate target layer for Grad-CAM based on active architecture."""
-        if hasattr(self.model, "stage4_act2"):
-            return [self.model.stage4_act2]
-        elif hasattr(self.model, "stage4_eca"):
-            return [self.model.stage4_eca]
-        elif hasattr(self.model, "features"):
-            try:
-                # KDEFNet Block 4 conv
-                return [self.model.features[3][3]]
-            except Exception:
-                return [self.model.features[-1]]
-        return None
+        """Trả về tầng đích Grad-CAM cho KDEF_Stem2Ch_ECA_Strip."""
+        return [self.model.stage4_act2]
 
     def predict_image(self, image: np.ndarray, auto_fallback: bool = True):
         # 1. Phát hiện và cắt khuôn mặt

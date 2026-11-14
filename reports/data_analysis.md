@@ -154,14 +154,12 @@ Lý do:
 
 Theo tiêu chí đề bài ("chỉ chọn balanced nếu official hỏng nghiêm trọng và balanced sạch hơn") — thực tế **ngược lại ở mọi tiêu chí**: official gần như sạch, balanced bẩn cả về nguồn gốc lẫn rò rỉ.
 
-## 7. Danh mục file tạo mới
+## 7. Danh mục file phân tích dữ liệu (tích hợp notebook tại Mục 3)
 
-| File | Nội dung |
+| File / Nguồn | Nội dung |
 |---|---|
-| `reports/eda_step1_counts.py` | Đếm lớp × split + vẽ biểu đồ |
-| `reports/eda_step2_pixels.py` | Kích thước/màu/thống kê pixel |
-| `reports/eda_step3_grids.py` | Grid mẫu + phân tích manifest test |
-| `reports/check_leakage.py` | Kiểm tra rò rỉ MD5 + subject, in JSON, exit 0 |
-| `reports/data_analysis.md` | Báo cáo này |
-| `reports/figures/*.png` | 7 biểu đồ/grid |
+| `notebooks/CNN_KDEF_FER.ipynb` (Mục 3) | Tự động chạy lại toàn bộ đếm lớp, thống kê pixel, grid mẫu & kiểm tra rò rỉ MD5/subject |
+| `reports/check_leakage.py` | Kiểm tra rò rỉ MD5 + subject độc lập, in JSON, exit 0 |
+| `reports/data_analysis.md` | Báo cáo phân tích dữ liệu này |
+| `reports/figures/*.png` | Biểu đồ & grid EDA tương ứng |
 | `reports/figures/*.csv`, `*.json` | Số liệu thô kèm theo |
