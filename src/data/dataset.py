@@ -5,7 +5,7 @@ Optimized for KDEF Facial Emotion Recognition (Hoc-May project).
 Supports:
 - Clean train/val/test splits of official-kdef-dataset-by-ksatrajit0
 - Automatic exclusion of corrupt pitch-black frames (MD5: 320b34032e2133fdfb80a58c953d5c94)
-- Aspect-aware facial region cropping [0.04W:0.96W, 0.16H:0.86H]
+- SSD face-centered square-pad cropping (`ssd_pad_160_1ch`, margin=1.25) with studio fallback
 - Contrast Limited Adaptive Histogram Equalization (CLAHE)
 - Robust case-insensitive file matching (.JPG / .jpg)
 - Extraction of facial metadata (subject ID, gender, emotion code, pose angle: FL, FR, HL, HR, S)
@@ -25,7 +25,12 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from src.preprocessing.alignment import preprocess_kdef_image
+from src.preprocessing.alignment import (
+    DEFAULT_CROP_MODE,
+    DEFAULT_SSD_MARGIN,
+    KDEF_STUDIO_CROP_BOX,
+    preprocess_kdef_image,
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -55,10 +60,10 @@ EMOTION_CODE_MAP = {
     "SU": "surprise"
 }
 
-# Default dataset normalization constants for aspect-cropped CLAHE grayscale 128x128
+# Default dataset normalization constants for ssd_pad_160_1ch (160x160 CLAHE grayscale)
 # Strictly computed on the clean train split (3,349 images, excluding 10 black frames)
-DEFAULT_KDEF_MEAN = 0.407835
-DEFAULT_KDEF_STD = 0.242375
+DEFAULT_KDEF_MEAN = 0.407255
+DEFAULT_KDEF_STD = 0.209657
 
 
 def parse_kdef_filename(filename: str) -> Dict[str, str]:
@@ -110,19 +115,21 @@ def compute_file_md5(path: Union[str, Path], chunk_size: int = 1 << 20) -> str:
 class KDEFDataset(Dataset):
     """
     PyTorch Dataset for KDEF Facial Emotion Recognition.
-    Handles data discovery, corrupt frame exclusion, aspect-aware cropping,
-    CLAHE preprocessing, and augmentation.
+    Handles data discovery, corrupt frame exclusion, SSD face-centered square-pad
+    cropping (`ssd_pad_160_1ch` by default), CLAHE preprocessing, and augmentation.
     """
     def __init__(
         self,
         data_dir: Optional[Union[str, Path]] = None,
         split: str = "train",
         use_crop: bool = True,
-        crop_box: Tuple[float, float, float, float] = (0.04, 0.16, 0.96, 0.86),
+        crop_mode: str = DEFAULT_CROP_MODE,
+        ssd_margin: float = DEFAULT_SSD_MARGIN,
+        crop_box: Tuple[float, float, float, float] = KDEF_STUDIO_CROP_BOX,
         use_clahe: bool = True,
         clahe_clip: float = 2.0,
         clahe_blend: float = 0.8,
-        img_size: int = 128,
+        img_size: int = 160,
         in_channels: int = 1,
         transform: Optional[Callable] = None,
         exclude_corrupt: bool = True,
@@ -131,6 +138,8 @@ class KDEFDataset(Dataset):
         super().__init__()
         self.split = split.lower()
         self.use_crop = use_crop
+        self.crop_mode = crop_mode
+        self.ssd_margin = ssd_margin
         self.crop_box = crop_box
         self.use_clahe = use_clahe
         self.clahe_clip = clahe_clip
@@ -198,8 +207,8 @@ class KDEFDataset(Dataset):
 
     def _preprocess_raw_image(self, img_arr: np.ndarray) -> np.ndarray:
         """
-        Applies aspect-aware cropping and CLAHE contrast enhancement via preprocess_kdef_image.
-        img_arr: 2D uint8 numpy array (H, W).
+        Applies SSD face-centered cropping (or studio fallback) and CLAHE contrast enhancement.
+        img_arr: 2D uint8 numpy array (H, W) or 3D BGR array.
         """
         return preprocess_kdef_image(
             img_arr,
@@ -207,20 +216,26 @@ class KDEFDataset(Dataset):
             use_clahe=self.use_clahe,
             clahe_clip=self.clahe_clip,
             clahe_blend=self.clahe_blend,
-            img_size=self.img_size
+            img_size=self.img_size,
+            crop_mode=self.crop_mode,
+            ssd_margin=self.ssd_margin,
+            crop_box=self.crop_box,
         )
 
     def __getitem__(self, idx: int):
         fpath, label, meta = self.samples[idx]
 
-        # Standardized preprocessing with aspect crop, cv2.INTER_AREA & CLAHE
+        # Standardized preprocessing with SSD square-pad crop, cv2.INTER_AREA & CLAHE
         proc_arr = preprocess_kdef_image(
             fpath,
             use_aspect_crop=self.use_crop,
             use_clahe=self.use_clahe,
             clahe_clip=self.clahe_clip,
             clahe_blend=self.clahe_blend,
-            img_size=self.img_size
+            img_size=self.img_size,
+            crop_mode=self.crop_mode,
+            ssd_margin=self.ssd_margin,
+            crop_box=self.crop_box,
         )
 
         tensor = torch.from_numpy(proc_arr).unsqueeze(0).float() / 255.0  # (1, H, W)
@@ -279,15 +294,18 @@ def get_transforms(
 
 def compute_kdef_mean_std(
     data_dir: Optional[Union[str, Path]] = None,
-    num_samples_per_class: int = 80,
+    num_samples_per_class: Optional[int] = 80,
     seed: int = 42,
     use_crop: bool = True,
+    crop_mode: str = DEFAULT_CROP_MODE,
+    ssd_margin: float = DEFAULT_SSD_MARGIN,
     use_clahe: bool = True,
-    img_size: int = 128
+    img_size: int = 160
 ) -> Tuple[float, float]:
     """
     Computes exact dataset mean and standard deviation strictly on the clean
-    training split (default: 80 samples per class = 560 samples, seed=42).
+    training split (default: 80 samples per class = 560 samples, seed=42, or full
+    clean train split if `num_samples_per_class is None`).
     """
     import random
     rng = random.Random(seed)
@@ -296,6 +314,8 @@ def compute_kdef_mean_std(
         data_dir=data_dir,
         split="train",
         use_crop=use_crop,
+        crop_mode=crop_mode,
+        ssd_margin=ssd_margin,
         use_clahe=use_clahe,
         img_size=img_size,
         in_channels=1,
@@ -310,8 +330,11 @@ def compute_kdef_mean_std(
     sampled_indices = []
     for c in range(len(CLASS_NAMES)):
         indices = class_indices[c]
-        k = min(num_samples_per_class, len(indices))
-        sampled_indices.extend(rng.sample(indices, k))
+        if num_samples_per_class is None:
+            sampled_indices.extend(indices)
+        else:
+            k = min(num_samples_per_class, len(indices))
+            sampled_indices.extend(rng.sample(indices, k))
 
     total_sum = 0.0
     total_sq_sum = 0.0

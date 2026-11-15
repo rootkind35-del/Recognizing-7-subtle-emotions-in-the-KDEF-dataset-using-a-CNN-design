@@ -30,7 +30,11 @@ project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.preprocessing.alignment import preprocess_kdef_image
+from src.preprocessing.alignment import (
+    DEFAULT_CROP_MODE,
+    DEFAULT_SSD_MARGIN,
+    preprocess_kdef_image,
+)
 from src.data.dataset import (
     ANGLE_NAMES,
     CLASS_NAMES,
@@ -39,7 +43,7 @@ from src.data.dataset import (
     KDEFDataset,
     get_transforms
 )
-from src.models.model import KDEF_Stem2Ch_ECA_Strip, build_model, load_kdef_checkpoint
+from src.models.model import KDEF_Stem2Ch_MS4_Symmetric, build_model, load_kdef_checkpoint
 
 
 def measure_activation_statistics(
@@ -47,14 +51,16 @@ def measure_activation_statistics(
     sample_path: Union[str, Path],
     device: torch.device,
     use_crop: bool = True,
+    crop_mode: str = DEFAULT_CROP_MODE,
+    ssd_margin: float = DEFAULT_SSD_MARGIN,
     use_clahe: bool = True,
-    img_size: int = 128,
+    img_size: int = 160,
     mean: float = DEFAULT_KDEF_MEAN,
     std: float = DEFAULT_KDEF_STD
 ) -> Dict[str, float]:
     """
     Measures activation stats across stages (especially Stage 4 pre-pool) on a specific probe sample (e.g., AF01HAHR.JPG).
-    Supports both KDEF_Stem2Ch_ECA_Strip (probe_activations) and baseline KDEFNet (extract_stage4_pre_pool).
+    Supports KDEF_Stem2Ch_MS4_Symmetric (probe_activations) and fallback extract_stage4_pre_pool hooks.
     """
     model.eval()
     sample_path = Path(sample_path)
@@ -67,7 +73,9 @@ def measure_activation_statistics(
         use_clahe=use_clahe,
         clahe_clip=2.0,
         clahe_blend=0.8,
-        img_size=img_size
+        img_size=img_size,
+        crop_mode=crop_mode,
+        ssd_margin=ssd_margin,
     )
     tensor = torch.from_numpy(proc_arr).unsqueeze(0).unsqueeze(0).float() / 255.0
     tensor = ((tensor - mean) / std).to(device)
@@ -106,8 +114,10 @@ def evaluate_split(
     use_tta: bool = False,
     tta_mode: str = "none",
     use_crop: bool = True,
+    crop_mode: str = DEFAULT_CROP_MODE,
+    ssd_margin: float = DEFAULT_SSD_MARGIN,
     use_clahe: bool = True,
-    img_size: int = 128,
+    img_size: int = 160,
     batch_size: int = 32,
     device: Optional[torch.device] = None,
     probe_sample_path: Optional[Union[str, Path]] = None,
@@ -130,6 +140,8 @@ def evaluate_split(
         data_dir=data_dir,
         split=split,
         use_crop=use_crop,
+        crop_mode=crop_mode,
+        ssd_margin=ssd_margin,
         use_clahe=use_clahe,
         img_size=img_size,
         in_channels=1,
@@ -159,7 +171,7 @@ def evaluate_split(
             xb = xb.to(device)
             if effective_tta in ["ms4", "multiscale4"]:
                 xb_flip = torch.flip(xb, dims=[3])
-                margin = 4
+                margin = max(4, round(img_size * 4 / 128))
                 xb_crop = F.interpolate(
                     xb[:, :, margin : img_size - margin, margin : img_size - margin],
                     size=(img_size, img_size),
@@ -249,6 +261,8 @@ def evaluate_split(
             sample_path=probe_sample_path,
             device=device,
             use_crop=use_crop,
+            crop_mode=crop_mode,
+            ssd_margin=ssd_margin,
             use_clahe=use_clahe,
             img_size=img_size,
             mean=mean,
@@ -277,6 +291,8 @@ def evaluate_split(
             "split": split,
             "use_tta": use_tta,
             "use_crop": use_crop,
+            "crop_mode": crop_mode,
+            "ssd_margin": ssd_margin,
             "use_clahe": use_clahe,
             "img_size": img_size,
             "device": f"{device} ({torch.cuda.get_device_name(0) if device.type == 'cuda' else 'CPU'})"
@@ -293,7 +309,7 @@ def evaluate_checkpoint(
     tta_mode: str = "none",
     device: Optional[torch.device] = None
 ) -> Dict:
-    """Loads the winning KDEF_Stem2Ch_ECA_Strip checkpoint and evaluates it on the specified split."""
+    """Loads the winning KDEF_Stem2Ch_MS4_Symmetric checkpoint and evaluates it on the specified split."""
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -306,6 +322,8 @@ def evaluate_checkpoint(
         use_tta=use_tta,
         tta_mode=tta_mode,
         use_crop=meta["use_crop"],
+        crop_mode=meta.get("crop_mode", DEFAULT_CROP_MODE),
+        ssd_margin=meta.get("ssd_margin", DEFAULT_SSD_MARGIN),
         use_clahe=meta["use_clahe"],
         img_size=meta["img_size"],
         device=device,
@@ -316,7 +334,7 @@ def evaluate_checkpoint(
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Evaluate KDEF_Stem2Ch_ECA_Strip Checkpoint")
+    parser = argparse.ArgumentParser(description="Evaluate KDEF_Stem2Ch_MS4_Symmetric Checkpoint")
     parser.add_argument("--checkpoint", type=str, default="checkpoints/final_model.pt")
     parser.add_argument("--data_dir", type=str, default=None)
     parser.add_argument("--split", type=str, default="test")

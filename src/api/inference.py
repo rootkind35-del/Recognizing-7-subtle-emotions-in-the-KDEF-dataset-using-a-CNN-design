@@ -16,8 +16,13 @@ import torch
 import numpy as np
 from PIL import Image
 from torchvision import transforms
-from src.models.model import load_kdef_checkpoint, KDEF_Stem2Ch_ECA_Strip
-from src.preprocessing.alignment import FaceAligner, preprocess_kdef_image
+from src.models.model import load_kdef_checkpoint
+from src.preprocessing.alignment import (
+    DEFAULT_CROP_MODE,
+    DEFAULT_SSD_MARGIN,
+    FaceAligner,
+    preprocess_kdef_image,
+)
 from src.utils.device import get_device
 
 DEFAULT_CHECKPOINT_CANDIDATES = (
@@ -46,10 +51,16 @@ class EmotionRecognizer:
         self.img_size = self.meta["img_size"]
         self.mean = self.meta["mean"]
         self.std = self.meta["std"]
+        self.use_crop = self.meta.get("use_crop", True)
+        self.crop_mode = self.meta.get("crop_mode", DEFAULT_CROP_MODE)
+        self.ssd_margin = float(self.meta.get("ssd_margin", DEFAULT_SSD_MARGIN))
         self.use_clahe = self.meta["use_clahe"]
         self.clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)) if self.use_clahe else None
 
-        self.aligner = FaceAligner()
+        self.aligner = FaceAligner(
+            use_ssd=self.crop_mode.startswith("ssd"),
+            ssd_margin=self.ssd_margin,
+        )
         self.normalize = transforms.Normalize(mean=[self.mean], std=[self.std])
         self.emotions = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
 
@@ -75,28 +86,38 @@ class EmotionRecognizer:
         return tensor
 
     def get_gradcam_target_layers(self):
-        """Trả về tầng đích Grad-CAM cho KDEF_Stem2Ch_ECA_Strip."""
-        return [self.model.stage4_act2]
+        """Trả về tầng đích Grad-CAM an toàn cho KDEF_Stem2Ch_MS4_Symmetric."""
+        if hasattr(self.model, "get_gradcam_target_layers"):
+            return self.model.get_gradcam_target_layers()
+        return [self.model.s4_ms.eca]
 
     def predict_image(self, image: np.ndarray, auto_fallback: bool = True):
-        # 1. Phát hiện và cắt khuôn mặt
-        face = self.aligner.align_and_crop(image, target_size=(self.img_size, self.img_size))
-        if face is None:
-            if auto_fallback:
-                # Thử dùng aspect-aware studio crop nếu ảnh là chân dung trực tiếp (ví dụ KDEF)
-                try:
-                    face = preprocess_kdef_image(
-                        image,
-                        use_aspect_crop=self.meta.get("use_crop", True),
-                        use_clahe=False,  # clahe sẽ được áp dụng trong _preprocess_face
-                        img_size=self.img_size
-                    )
-                except Exception:
+        # 1. Phát hiện và cắt khuôn mặt theo đúng ssd_pad_160_1ch (SSD square-pad + fallback)
+        if not self.use_crop or self.crop_mode == "none":
+            face = image
+        else:
+            face = self.aligner.align_and_crop(
+                image,
+                target_size=(self.img_size, self.img_size),
+                margin=self.ssd_margin,
+            )
+            if face is None:
+                if auto_fallback:
+                    try:
+                        face = preprocess_kdef_image(
+                            image,
+                            use_aspect_crop=self.use_crop,
+                            use_clahe=False,  # clahe sẽ được áp dụng trong _preprocess_face
+                            img_size=self.img_size,
+                            crop_mode=self.crop_mode,
+                            ssd_margin=self.ssd_margin,
+                        )
+                    except Exception:
+                        return None, "No face detected"
+                else:
                     return None, "No face detected"
-            else:
-                return None, "No face detected"
 
-        # 2. Tiền xử lý grayscale 128x128 (+ CLAHE nếu checkpoint sử dụng)
+        # 2. Tiền xử lý grayscale 160x160 (+ CLAHE nếu checkpoint sử dụng)
         input_tensor = self._preprocess_face(face)
 
         # 3. Suy luận (kèm Flip-TTA nếu bật)
