@@ -1,0 +1,109 @@
+{
+  "config": {
+    "balanced_sample_per_split": 3000,
+    "seed": 42
+  },
+  "official_full": {
+    "n_images_hashed": 4898,
+    "n_unique_md5": 4889,
+    "cross_split_duplicate_images": {
+      "train-val": 10,
+      "train-test": 0,
+      "val-test": 0
+    },
+    "n_hashes_appearing_in_multiple_splits": 1,
+    "within_split_extra_duplicates": {
+      "train": 0,
+      "val": 0,
+      "test": 0
+    }
+  },
+  "official_manifest_subjects": {
+    "manifest_rows": 4898,
+    "subjects_per_split": {
+      "test": 14,
+      "train": 48,
+      "val": 8
+    },
+    "subjects_in_multiple_splits": 0,
+    "subject_overlap_by_pair": {
+      "train-val": 0,
+      "train-test": 0,
+      "val-test": 0
+    },
+    "subject_list_overlap": []
+  },
+  "balanced_sample": {
+    "n_images_hashed": 9000,
+    "n_unique_md5": 8937,
+    "cross_split_duplicate_images": {
+      "train-val": 20,
+      "train-test": 24,
+      "val-test": 23
+    },
+    "n_hashes_appearing_in_multiple_splits": 31,
+    "within_split_extra_duplicates": {
+      "train": 6,
+      "val": 9,
+      "test": 12
+    }
+  },
+  "multicultural_manifest": {
+    "manifest_path": "data/manifests/multicultural_manifest.csv",
+    "passed": true,
+    "total_rows": 41269,
+    "split_counts": {
+      "train": 32404,
+      "val": 3990,
+      "test": 4875
+    },
+    "source_split_counts": {
+      "fer2013": {
+        "train": 28006,
+        "val": 3283,
+        "test": 3589
+      },
+      "kdef": {
+        "train": 3349,
+        "val": 559,
+        "test": 980
+      },
+      "radiate": {
+        "train": 1049,
+        "val": 148,
+        "test": 306
+      }
+    },
+    "n_unique_md5": 40172,
+    "n_missing_files": 0,
+    "missing_files_sample": [],
+    "n_md5_mismatches": 0,
+    "md5_mismatches_sample": [],
+    "cross_split_md5_groups": 0,
+    "cross_split_md5_pair_images": {
+      "train-val": 0,
+      "train-test": 0,
+      "val-test": 0
+    },
+    "within_split_extra_md5_duplicates": {
+      "train": 1064,
+      "val": 16,
+      "test": 17
+    },
+    "n_corrupt_or_black_in_train_val": 0,
+    "corrupt_in_train_val_sample": [],
+    "n_tracked_subjects_total": 179,
+    "subjects_per_split": {
+      "train": 124,
+      "val": 19,
+      "test": 36
+    },
+    "subjects_in_multiple_splits": 0,
+    "subject_overlap_by_pair": {
+      "train-val": 0,
+      "train-test": 0,
+      "val-test": 0
+    },
+    "subject_overlap_list": []
+  }
+}

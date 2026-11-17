@@ -20,15 +20,17 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
+import pandas as pd
 from PIL import Image
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
 from src.preprocessing.alignment import (
     DEFAULT_CROP_MODE,
     DEFAULT_SSD_MARGIN,
     KDEF_STUDIO_CROP_BOX,
+    preprocess_image,
     preprocess_kdef_image,
 )
 
@@ -64,6 +66,14 @@ EMOTION_CODE_MAP = {
 # Strictly computed on the clean train split (3,349 images, excluding 10 black frames)
 DEFAULT_KDEF_MEAN = 0.407255
 DEFAULT_KDEF_STD = 0.209657
+
+# Default 3-source multicultural normalization constants for ssd_pad_160_1ch
+# Strictly computed on full clean 3-source train split (32,404 images, excluding val and test)
+DEFAULT_MULTICULTURAL_MEAN = 0.517243
+DEFAULT_MULTICULTURAL_STD = 0.264053
+
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+DEFAULT_MULTICULTURAL_MANIFEST = REPO_ROOT / "data" / "manifests" / "multicultural_manifest.csv"
 
 
 def parse_kdef_filename(filename: str) -> Dict[str, str]:
@@ -350,4 +360,214 @@ def compute_kdef_mean_std(
     var = (total_sq_sum / total_pixels) - (mean ** 2)
     std = float(np.sqrt(max(var, 1e-12)))
 
+    return round(mean, 6), round(std, 6)
+
+
+class MulticulturalFERDataset(Dataset):
+    """
+    PyTorch Dataset for the unified 3-source Multicultural FER manifest
+    (KDEF + RADIATE + FER-2013), applying source-aware `ssd_pad_160_1ch` preprocessing.
+    """
+
+    META_COLS = ("source", "subject_id", "ethnic_group", "gender", "angle", "md5", "label", "filepath")
+
+    def __init__(
+        self,
+        manifest_path: Optional[Union[str, Path]] = None,
+        split: str = "train",
+        img_size: int = 160,
+        transform: Optional[Callable] = None,
+        return_metadata: bool = True,
+        in_channels: int = 1,
+        use_crop: bool = True,
+        crop_mode: str = DEFAULT_CROP_MODE,
+        ssd_margin: float = DEFAULT_SSD_MARGIN,
+        use_clahe: bool = True,
+        clahe_clip: float = 2.0,
+        clahe_blend: float = 0.8,
+        root_dir: Optional[Union[str, Path]] = None,
+    ):
+        super().__init__()
+        self.split = split.strip().lower()
+        self.img_size = img_size
+        self.transform = transform
+        self.return_metadata = return_metadata
+        self.in_channels = in_channels
+        self.use_crop = use_crop
+        self.crop_mode = crop_mode
+        self.ssd_margin = ssd_margin
+        self.use_clahe = use_clahe
+        self.clahe_clip = clahe_clip
+        self.clahe_blend = clahe_blend
+
+        self.root_dir = Path(root_dir).resolve() if root_dir is not None else REPO_ROOT
+        m_path = Path(manifest_path) if manifest_path is not None else DEFAULT_MULTICULTURAL_MANIFEST
+        if not m_path.is_absolute():
+            m_path = self.root_dir / m_path
+        if not m_path.exists():
+            raise FileNotFoundError(f"Multicultural manifest not found: {m_path}")
+        self.manifest_path = m_path
+
+        df = pd.read_csv(self.manifest_path)
+        if "split" not in df.columns:
+            raise ValueError(f"Manifest missing 'split' column: {self.manifest_path}")
+        df = df[df["split"].astype(str).str.strip().str.lower() == self.split].copy()
+        df.reset_index(drop=True, inplace=True)
+
+        for col in self.META_COLS:
+            if col in df.columns:
+                df[col] = df[col].fillna("unknown").astype(str)
+            else:
+                df[col] = "unknown"
+
+        if "label_idx" in df.columns:
+            df["label_idx"] = df["label_idx"].astype(int)
+        else:
+            df["label_idx"] = df["label"].map(CLASS_TO_IDX).astype(int)
+
+        if (df["label_idx"] < 0).any() or (df["label_idx"] >= len(CLASS_NAMES)).any():
+            raise ValueError("Invalid label_idx values found in manifest.")
+
+        self.df = df
+        self.samples: List[Tuple[Path, int, Dict[str, str]]] = []
+        for row in self.df.itertuples(index=False):
+            rel_fp = Path(row.filepath)
+            fpath = rel_fp if rel_fp.is_absolute() else (self.root_dir / rel_fp)
+            meta = {
+                "source": row.source,
+                "subject_id": row.subject_id,
+                "ethnic_group": row.ethnic_group,
+                "gender": row.gender,
+                "angle": row.angle,
+                "md5": row.md5,
+                "label": row.label,
+                "filepath": row.filepath,
+            }
+            self.samples.append((fpath, int(row.label_idx), meta))
+
+    def __len__(self) -> int:
+        return len(self.samples)
+
+    def __getitem__(self, idx: int):
+        fpath, label_idx, meta = self.samples[idx]
+        proc_arr = preprocess_image(
+            fpath,
+            source=meta["source"],
+            use_aspect_crop=self.use_crop,
+            use_clahe=self.use_clahe,
+            clahe_clip=self.clahe_clip,
+            clahe_blend=self.clahe_blend,
+            img_size=self.img_size,
+            crop_mode=self.crop_mode,
+            ssd_margin=self.ssd_margin,
+        )
+        tensor = torch.from_numpy(proc_arr)  # float32 (1, H, W) in [0, 1]
+        if self.in_channels == 3:
+            tensor = tensor.repeat(3, 1, 1)
+
+        if self.transform is not None:
+            tensor = self.transform(tensor)
+
+        if self.return_metadata:
+            return tensor, label_idx, meta
+        return tensor, label_idx
+
+
+def compute_class_weights(
+    manifest_df_train: Union[pd.DataFrame, str, Path],
+) -> torch.Tensor:
+    """
+    Computes inverse-frequency balanced class weights `N / (7 * N_c)` strictly on the
+    `train` split.
+    """
+    if isinstance(manifest_df_train, (str, Path)):
+        df = pd.read_csv(manifest_df_train)
+    else:
+        df = manifest_df_train.copy()
+
+    if "split" in df.columns:
+        df = df[df["split"].astype(str).str.strip().str.lower() == "train"]
+
+    if len(df) == 0:
+        raise ValueError("Empty training dataframe passed to compute_class_weights.")
+
+    if "label_idx" in df.columns:
+        labels = df["label_idx"].astype(int).to_numpy()
+    elif "label" in df.columns:
+        labels = df["label"].astype(str).map(CLASS_TO_IDX).astype(int).to_numpy()
+    else:
+        raise ValueError("Manifest must contain 'label_idx' or 'label' column.")
+
+    n_total = len(labels)
+    n_classes = len(CLASS_NAMES)
+    counts = np.bincount(labels, minlength=n_classes)
+    weights = [float(n_total) / (float(n_classes) * float(max(int(counts[c]), 1))) for c in range(n_classes)]
+    return torch.tensor(weights, dtype=torch.float32)
+
+
+def compute_multicultural_mean_std(
+    manifest_path: Optional[Union[str, Path]] = None,
+    num_samples_per_class: Optional[int] = None,
+    seed: int = 42,
+    use_crop: bool = True,
+    crop_mode: str = DEFAULT_CROP_MODE,
+    ssd_margin: float = DEFAULT_SSD_MARGIN,
+    use_clahe: bool = True,
+    clahe_clip: float = 2.0,
+    clahe_blend: float = 0.8,
+    img_size: int = 160,
+    batch_size: int = 64,
+    num_workers: int = 0,
+    root_dir: Optional[Union[str, Path]] = None,
+) -> Tuple[float, float]:
+    """
+    Computes exact pixel mean and std strictly on the clean 3-source `train` split
+    (excluding `val` and `test`). Uses full clean `train` split by default.
+    """
+    import random
+
+    ds = MulticulturalFERDataset(
+        manifest_path=manifest_path,
+        split="train",
+        img_size=img_size,
+        transform=None,
+        return_metadata=False,
+        in_channels=1,
+        use_crop=use_crop,
+        crop_mode=crop_mode,
+        ssd_margin=ssd_margin,
+        use_clahe=use_clahe,
+        clahe_clip=clahe_clip,
+        clahe_blend=clahe_blend,
+        root_dir=root_dir,
+    )
+
+    if num_samples_per_class is not None:
+        rng = random.Random(seed)
+        class_indices = defaultdict(list)
+        for i, (_, lbl, _) in enumerate(ds.samples):
+            class_indices[lbl].append(i)
+        sampled_indices: List[int] = []
+        for c in range(len(CLASS_NAMES)):
+            idxs = class_indices[c]
+            k = min(num_samples_per_class, len(idxs))
+            sampled_indices.extend(rng.sample(idxs, k))
+        subset = torch.utils.data.Subset(ds, sampled_indices)
+    else:
+        subset = ds
+
+    loader = DataLoader(subset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    total_sum = 0.0
+    total_sq_sum = 0.0
+    total_pixels = 0
+
+    for batch_x, _ in loader:
+        b64 = batch_x.to(torch.float64)
+        total_sum += float(b64.sum().item())
+        total_sq_sum += float((b64 * b64).sum().item())
+        total_pixels += int(b64.numel())
+
+    mean = total_sum / total_pixels
+    var = (total_sq_sum / total_pixels) - (mean ** 2)
+    std = float(np.sqrt(max(var, 1e-12)))
     return round(mean, 6), round(std, 6)

@@ -1,5 +1,8 @@
 # Dữ liệu lớn — không đưa lên GitHub (883MB ảnh KDEF)
-data/
+data/*
+!data/manifests/
+!data/manifests/**
+!data/NGUON_DU_LIEU.md
 
 # Checkpoint / trọng số mô hình (249MB)
 checkpoints/

@@ -10,6 +10,7 @@ Supports:
 """
 
 import os
+import warnings
 from pathlib import Path
 from typing import Optional, Sequence, Tuple, Union
 
@@ -26,12 +27,24 @@ _PREPROC_DIR = Path(__file__).resolve().parent
 _SSD_PROTOTXT = _PREPROC_DIR / "models" / "deploy.prototxt"
 _SSD_CAFFEMODEL = _PREPROC_DIR / "models" / "res10_300x300_ssd_iter_140000.caffemodel"
 _SSD_NET = None
+_SSD_UNAVAILABLE = False
 
 
 def _get_ssd_net():
     """Lazily loads and caches the OpenCV Res10 SSD Caffe face detector."""
-    global _SSD_NET
+    global _SSD_NET, _SSD_UNAVAILABLE
+    if _SSD_UNAVAILABLE:
+        return None
     if _SSD_NET is None:
+        if not hasattr(cv2.dnn, "readNetFromCaffe"):
+            _SSD_UNAVAILABLE = True
+            warnings.warn(
+                f"OpenCV {cv2.__version__} does not provide cv2.dnn.readNetFromCaffe; "
+                "SSD face detection disabled, falling back to Haar/default crop.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return None
         if not _SSD_PROTOTXT.exists() or not _SSD_CAFFEMODEL.exists():
             raise FileNotFoundError(
                 f"Missing OpenCV SSD face detector weights under {_SSD_PROTOTXT.parent}"
@@ -51,6 +64,8 @@ def detect_face_ssd(
     if img_bgr.ndim == 2:
         img_bgr = cv2.cvtColor(img_bgr, cv2.COLOR_GRAY2BGR)
     net = _get_ssd_net()
+    if net is None:
+        return None, 0.0
     blob = cv2.dnn.blobFromImage(
         cv2.resize(img_bgr, (300, 300)),
         1.0,
@@ -90,14 +105,18 @@ def _crop_ssd_square(
     ssd_box: Optional[Sequence[float]],
     margin: float = DEFAULT_SSD_MARGIN,
     pad_mode: str = "pad",
-    fallback_box: Tuple[float, float, float, float] = KDEF_STUDIO_CROP_BOX,
+    fallback_box: Optional[Tuple[float, float, float, float]] = KDEF_STUDIO_CROP_BOX,
 ) -> np.ndarray:
     """
     Crops a face-centered square around `ssd_box` with side `max(w, h) * margin`.
     In `pad` mode, out-of-bounds margins are filled with `cv2.BORDER_REPLICATE` so the
     face remains horizontally/vertically centered across profile angles (`FL`, `FR`).
+    When `ssd_box is None`, falls back to `_crop_studio(img, fallback_box)` if `fallback_box`
+    is provided, or returns `img` unclipped if `fallback_box is None`.
     """
     if ssd_box is None:
+        if fallback_box is None:
+            return img
         return _crop_studio(img, fallback_box)
 
     h, w = img.shape[:2]
@@ -150,6 +169,118 @@ def _crop_ssd_square(
     return img[iy1:iy2, ix1:ix2]
 
 
+def _preprocess_to_uint8(
+    img_or_path: Union[str, Path, np.ndarray],
+    source: str = "kdef",
+    use_aspect_crop: bool = True,
+    use_clahe: bool = True,
+    clahe_clip: float = 2.0,
+    clahe_blend: float = 0.8,
+    img_size: int = 160,
+    crop_mode: str = DEFAULT_CROP_MODE,
+    ssd_margin: float = DEFAULT_SSD_MARGIN,
+    crop_box: Optional[Tuple[float, float, float, float]] = KDEF_STUDIO_CROP_BOX,
+    ssd_box: Optional[Sequence[float]] = None,
+) -> np.ndarray:
+    """Internal source-aware preprocessing returning uint8 `(img_size, img_size)` in `[0, 255]`."""
+    if isinstance(img_or_path, (str, Path)):
+        img_bgr = cv2.imread(str(img_or_path), cv2.IMREAD_COLOR)
+        if img_bgr is None:
+            raise ValueError(f"Could not read image: {img_or_path}")
+    elif isinstance(img_or_path, np.ndarray):
+        if img_or_path.ndim == 2:
+            img_bgr = cv2.cvtColor(img_or_path, cv2.COLOR_GRAY2BGR)
+        elif img_or_path.ndim == 3:
+            img_bgr = img_or_path
+        else:
+            raise ValueError(f"Unexpected image array shape: {img_or_path.shape}")
+    else:
+        raise TypeError(f"Unsupported image type: {type(img_or_path)}")
+
+    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+    src_norm = (source or "kdef").strip().lower()
+    is_fer2013 = src_norm == "fer2013"
+    effective_fallback = None if is_fer2013 else crop_box
+
+    if use_aspect_crop and crop_mode != "none":
+        if crop_mode == "ssd_square_pad":
+            if ssd_box is None:
+                ssd_box, _ = detect_face_ssd(img_bgr, min_conf=DEFAULT_SSD_MIN_CONF)
+            gray = _crop_ssd_square(
+                gray,
+                ssd_box,
+                margin=ssd_margin,
+                pad_mode="pad",
+                fallback_box=effective_fallback,
+            )
+        elif crop_mode == "ssd_square_clamp":
+            if ssd_box is None:
+                ssd_box, _ = detect_face_ssd(img_bgr, min_conf=DEFAULT_SSD_MIN_CONF)
+            gray = _crop_ssd_square(
+                gray,
+                ssd_box,
+                margin=ssd_margin,
+                pad_mode="clamp",
+                fallback_box=effective_fallback,
+            )
+        elif crop_mode == "studio":
+            if not is_fer2013 and crop_box is not None:
+                gray = _crop_studio(gray, crop_box)
+        else:
+            raise ValueError(f"Unsupported crop_mode: {crop_mode}")
+
+    h, w = gray.shape[:2]
+    interp = cv2.INTER_CUBIC if (h < img_size or w < img_size) else cv2.INTER_AREA
+    img = cv2.resize(gray, (img_size, img_size), interpolation=interp)
+
+    if use_clahe:
+        clahe = cv2.createCLAHE(clipLimit=clahe_clip, tileGridSize=(8, 8))
+        enhanced = clahe.apply(img)
+        if clahe_blend < 1.0:
+            img = cv2.addWeighted(enhanced, clahe_blend, img, 1.0 - clahe_blend, 0)
+        else:
+            img = enhanced
+
+    return img.astype(np.uint8)
+
+
+def preprocess_image(
+    img_or_path: Union[str, Path, np.ndarray],
+    source: str = "kdef",
+    use_aspect_crop: bool = True,
+    use_clahe: bool = True,
+    clahe_clip: float = 2.0,
+    clahe_blend: float = 0.8,
+    img_size: int = 160,
+    crop_mode: str = DEFAULT_CROP_MODE,
+    ssd_margin: float = DEFAULT_SSD_MARGIN,
+    crop_box: Tuple[float, float, float, float] = KDEF_STUDIO_CROP_BOX,
+    ssd_box: Optional[Sequence[float]] = None,
+) -> np.ndarray:
+    """
+    Source-aware Standardized Preprocessing Pipeline (`ssd_pad_160_1ch`).
+    - For `kdef` & `radiate`: Res10 SSD face-centered square crop (`margin=1.25`,
+      `cv2.BORDER_REPLICATE`, fallback `KDEF_STUDIO_CROP_BOX`) + `INTER_AREA` + CLAHE.
+    - For `fer2013`: Pre-cropped `48x48` faces never fall back to `KDEF_STUDIO_CROP_BOX`
+      when SSD misses (full `48x48` frame preserved) and upsampling uses `cv2.INTER_CUBIC`.
+    Returns float32 array of shape `(1, img_size, img_size)` in `[0.0, 1.0]`.
+    """
+    arr_u8 = _preprocess_to_uint8(
+        img_or_path=img_or_path,
+        source=source,
+        use_aspect_crop=use_aspect_crop,
+        use_clahe=use_clahe,
+        clahe_clip=clahe_clip,
+        clahe_blend=clahe_blend,
+        img_size=img_size,
+        crop_mode=crop_mode,
+        ssd_margin=ssd_margin,
+        crop_box=crop_box,
+        ssd_box=ssd_box,
+    )
+    return (arr_u8.astype(np.float32) / 255.0)[np.newaxis, :, :]
+
+
 def preprocess_kdef_image(
     img_or_path: Union[str, Path, np.ndarray],
     use_aspect_crop: bool = True,
@@ -176,51 +307,19 @@ def preprocess_kdef_image(
          at `0.8 * enhanced + 0.2 * raw`.
     Returns uint8 array of shape `(img_size, img_size)` in `[0, 255]`.
     """
-    if isinstance(img_or_path, (str, Path)):
-        img_bgr = cv2.imread(str(img_or_path), cv2.IMREAD_COLOR)
-        if img_bgr is None:
-            raise ValueError(f"Could not read image: {img_or_path}")
-    elif isinstance(img_or_path, np.ndarray):
-        if img_or_path.ndim == 2:
-            img_bgr = cv2.cvtColor(img_or_path, cv2.COLOR_GRAY2BGR)
-        elif img_or_path.ndim == 3:
-            img_bgr = img_or_path
-        else:
-            raise ValueError(f"Unexpected image array shape: {img_or_path.shape}")
-    else:
-        raise TypeError(f"Unsupported image type: {type(img_or_path)}")
-
-    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-
-    if use_aspect_crop and crop_mode != "none":
-        if crop_mode == "ssd_square_pad":
-            if ssd_box is None:
-                ssd_box, _ = detect_face_ssd(img_bgr, min_conf=DEFAULT_SSD_MIN_CONF)
-            gray = _crop_ssd_square(
-                gray, ssd_box, margin=ssd_margin, pad_mode="pad", fallback_box=crop_box
-            )
-        elif crop_mode == "ssd_square_clamp":
-            if ssd_box is None:
-                ssd_box, _ = detect_face_ssd(img_bgr, min_conf=DEFAULT_SSD_MIN_CONF)
-            gray = _crop_ssd_square(
-                gray, ssd_box, margin=ssd_margin, pad_mode="clamp", fallback_box=crop_box
-            )
-        elif crop_mode == "studio":
-            gray = _crop_studio(gray, crop_box)
-        else:
-            raise ValueError(f"Unsupported crop_mode: {crop_mode}")
-
-    img = cv2.resize(gray, (img_size, img_size), interpolation=cv2.INTER_AREA)
-
-    if use_clahe:
-        clahe = cv2.createCLAHE(clipLimit=clahe_clip, tileGridSize=(8, 8))
-        enhanced = clahe.apply(img)
-        if clahe_blend < 1.0:
-            img = cv2.addWeighted(enhanced, clahe_blend, img, 1.0 - clahe_blend, 0)
-        else:
-            img = enhanced
-
-    return img.astype(np.uint8)
+    return _preprocess_to_uint8(
+        img_or_path=img_or_path,
+        source="kdef",
+        use_aspect_crop=use_aspect_crop,
+        use_clahe=use_clahe,
+        clahe_clip=clahe_clip,
+        clahe_blend=clahe_blend,
+        img_size=img_size,
+        crop_mode=crop_mode,
+        ssd_margin=ssd_margin,
+        crop_box=crop_box,
+        ssd_box=ssd_box,
+    )
 
 
 class FaceAligner:
