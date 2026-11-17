@@ -22,17 +22,17 @@
       "eval_mode": "single_view",
       "val_macro_f1_ckpt": 0.695073,
       "latency_cpu": {
-        "ms_per_image": 18.585,
-        "ms_median": 18.119,
-        "ms_p95": 21.459,
-        "fps": 53.8,
+        "ms_per_image": 17.853,
+        "ms_median": 17.706,
+        "ms_p95": 18.67,
+        "fps": 56.0,
         "n_runs": 300
       },
       "latency_gpu": {
-        "ms_per_image": 2.055,
-        "ms_median": 1.777,
-        "ms_p95": 3.616,
-        "fps": 486.7,
+        "ms_per_image": 1.861,
+        "ms_median": 1.73,
+        "ms_p95": 2.665,
+        "fps": 537.2,
         "n_runs": 300
       },
       "metrics": {
@@ -294,10 +294,10 @@
       "eval_mode": "single_view",
       "val_macro_f1_ckpt": 0.386557,
       "latency_cpu": {
-        "ms_per_image": 0.468,
-        "ms_median": 0.411,
-        "ms_p95": 0.796,
-        "fps": 2138.3,
+        "ms_per_image": 0.431,
+        "ms_median": 0.409,
+        "ms_p95": 0.552,
+        "fps": 2321.0,
         "n_runs": 300
       },
       "latency_gpu": null,
@@ -547,6 +547,278 @@
           "HL": 0.375,
           "HR": 0.348214,
           "S": 0.696429
+        }
+      }
+    },
+    "resnet18": {
+      "name": "ResNet-18 (IMAGENET1K_V1)",
+      "checkpoint": "checkpoints/resnet18_multicultural.pt",
+      "checkpoint_mb": 42.734,
+      "n_parameters": 11180103,
+      "macs": 925289984,
+      "input": "xám 160x160 lặp 3 kênh, chuẩn hóa ImageNet",
+      "eval_mode": "single_view",
+      "val_macro_f1_ckpt": 0.704291,
+      "latency_cpu": {
+        "ms_per_image": 17.318,
+        "ms_median": 17.111,
+        "ms_p95": 19.161,
+        "fps": 57.7,
+        "n_runs": 300
+      },
+      "latency_gpu": {
+        "ms_per_image": 2.394,
+        "ms_median": 2.154,
+        "ms_p95": 3.982,
+        "fps": 417.7,
+        "n_runs": 300
+      },
+      "metrics": {
+        "n_samples": 3990,
+        "n_correct": 2840,
+        "accuracy": 0.711779,
+        "macro_f1": 0.704728,
+        "weighted_f1": 0.710752,
+        "roc_auc_ovr_macro": 0.917888,
+        "roc_auc_ovr_weighted": 0.914533,
+        "recall_spread": 0.3105,
+        "per_class_precision": {
+          "angry": 0.6467,
+          "disgust": 0.6611,
+          "fear": 0.6117,
+          "happy": 0.8869,
+          "neutral": 0.6598,
+          "sad": 0.6331,
+          "surprise": 0.7609
+        },
+        "per_class_recall": {
+          "angry": 0.6431,
+          "disgust": 0.844,
+          "fear": 0.5527,
+          "happy": 0.8632,
+          "neutral": 0.6964,
+          "sad": 0.6077,
+          "surprise": 0.8289
+        },
+        "per_class_f1": {
+          "angry": 0.6449,
+          "disgust": 0.7414,
+          "fear": 0.5807,
+          "happy": 0.8749,
+          "neutral": 0.6776,
+          "sad": 0.6202,
+          "surprise": 0.7935
+        },
+        "per_class_auc": {
+          "angry": 0.8942,
+          "disgust": 0.9703,
+          "fear": 0.8396,
+          "happy": 0.9739,
+          "neutral": 0.9123,
+          "sad": 0.8734,
+          "surprise": 0.9614
+        },
+        "confusion_matrix": [
+          [
+            346,
+            27,
+            40,
+            21,
+            37,
+            51,
+            16
+          ],
+          [
+            9,
+            119,
+            3,
+            4,
+            1,
+            4,
+            1
+          ],
+          [
+            50,
+            7,
+            304,
+            13,
+            46,
+            90,
+            40
+          ],
+          [
+            11,
+            8,
+            10,
+            839,
+            62,
+            19,
+            23
+          ],
+          [
+            42,
+            2,
+            38,
+            33,
+            477,
+            84,
+            9
+          ],
+          [
+            67,
+            17,
+            75,
+            25,
+            90,
+            440,
+            10
+          ],
+          [
+            10,
+            0,
+            27,
+            11,
+            10,
+            7,
+            315
+          ]
+        ],
+        "per_source": {
+          "kdef": {
+            "n_samples": 559,
+            "n_correct": 495,
+            "accuracy": 0.88551,
+            "macro_f1": 0.885109,
+            "weighted_f1": 0.885136,
+            "roc_auc_ovr_macro": 0.986413,
+            "per_class_recall": {
+              "angry": 0.7875,
+              "disgust": 0.9747,
+              "fear": 0.8375,
+              "happy": 0.9625,
+              "neutral": 0.875,
+              "sad": 0.8,
+              "surprise": 0.9625
+            },
+            "per_class_f1": {
+              "angry": 0.8571,
+              "disgust": 0.8701,
+              "fear": 0.8428,
+              "happy": 0.9625,
+              "neutral": 0.9032,
+              "sad": 0.8153,
+              "surprise": 0.9448
+            }
+          },
+          "radiate": {
+            "n_samples": 148,
+            "n_correct": 121,
+            "accuracy": 0.817568,
+            "macro_f1": 0.799425,
+            "weighted_f1": 0.810283,
+            "roc_auc_ovr_macro": 0.982992,
+            "per_class_recall": {
+              "angry": 0.7273,
+              "disgust": 0.9545,
+              "fear": 0.5909,
+              "happy": 0.9667,
+              "neutral": 1.0,
+              "sad": 0.6,
+              "surprise": 0.8
+            },
+            "per_class_f1": {
+              "angry": 0.7805,
+              "disgust": 0.8077,
+              "fear": 0.7027,
+              "happy": 0.9206,
+              "neutral": 0.9167,
+              "sad": 0.7059,
+              "surprise": 0.7619
+            }
+          },
+          "fer2013": {
+            "n_samples": 3283,
+            "n_correct": 2224,
+            "accuracy": 0.677429,
+            "macro_f1": 0.633883,
+            "weighted_f1": 0.677393,
+            "roc_auc_ovr_macro": 0.890719,
+            "per_class_recall": {
+              "angry": 0.6124,
+              "disgust": 0.525,
+              "fear": 0.5,
+              "happy": 0.8503,
+              "neutral": 0.6604,
+              "sad": 0.5833,
+              "surprise": 0.7931
+            },
+            "per_class_f1": {
+              "angry": 0.6034,
+              "disgust": 0.4565,
+              "fear": 0.5264,
+              "happy": 0.8649,
+              "neutral": 0.639,
+              "sad": 0.5928,
+              "surprise": 0.7541
+            }
+          }
+        },
+        "per_ethnic_group": {
+          "KDEF": {
+            "n_samples": 559,
+            "n_correct": 495,
+            "accuracy": 0.88551,
+            "macro_f1": 0.885109
+          },
+          "B": {
+            "n_samples": 54,
+            "n_correct": 45,
+            "accuracy": 0.833333,
+            "macro_f1": 0.80885
+          },
+          "A": {
+            "n_samples": 27,
+            "n_correct": 25,
+            "accuracy": 0.925926,
+            "macro_f1": 0.930612
+          },
+          "H": {
+            "n_samples": 26,
+            "n_correct": 16,
+            "accuracy": 0.615385,
+            "macro_f1": 0.591156
+          },
+          "W": {
+            "n_samples": 41,
+            "n_correct": 35,
+            "accuracy": 0.853659,
+            "macro_f1": 0.833766
+          },
+          "FER": {
+            "n_samples": 3283,
+            "n_correct": 2224,
+            "accuracy": 0.677429,
+            "macro_f1": 0.633883
+          }
+        },
+        "per_gender": {
+          "female": {
+            "n_samples": 304,
+            "accuracy": 0.868421,
+            "macro_f1": 0.865882
+          },
+          "male": {
+            "n_samples": 403,
+            "accuracy": 0.873449,
+            "macro_f1": 0.871945
+          }
+        },
+        "angle_accuracy": {
+          "FL": 0.837838,
+          "FR": 0.785714,
+          "HL": 0.946429,
+          "HR": 0.919643,
+          "S": 0.9375
         }
       }
     }

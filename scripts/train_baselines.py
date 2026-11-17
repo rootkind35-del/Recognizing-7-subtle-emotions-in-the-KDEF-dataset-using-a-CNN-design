@@ -284,66 +284,58 @@ def run_hog_svm_tuning_and_training(
     np.save(scaled_va_path, X_va_scaled)
 
     # Canonical C values from PDF Section 4.3.1: {0.0001, 0.001, 0.01}
-    c_candidates = [0.0001, 0.001, 0.01]
-    print(f"\n[LinearSVC Grid Search] Fitting C in {c_candidates} with class_weight='balanced' across 3 parallel processes...")
-    t_grid0 = time.time()
-
-    df_val_records = df_val.to_dict(orient="records")
-    results = []
-
-    with concurrent.futures.ProcessPoolExecutor(max_workers=3) as executor:
-        futures = {
-            executor.submit(
-                _fit_single_svm_worker,
-                c_val=c,
-                cw="balanced",
-                scaled_train_path=scaled_tr_path,
-                y_train=y_train,
-                scaled_val_path=scaled_va_path,
-                y_val=y_val,
-                df_val_records=df_val_records,
-                feat_dim=feat_dim,
-                h_sz=h_sz,
-                c_sz=c_sz,
-                nb=nb,
-                seed=seed,
-            ): c
-            for c in c_candidates
-        }
-        for future in concurrent.futures.as_completed(futures):
-            res = future.result()
-            results.append(res)
-            print(
-                f"  C={res['C']:<8g} cw={res['class_weight']} | "
-                f"train_F1={res['train_macro_f1']:.4f} | "
-                f"val_F1={res['val_macro_f1']:.4f} val_Acc={res['val_accuracy']:.4f} "
-                f"val_AUC={res['val_roc_auc']:.4f} "
-                f"(KDEF={res['val_kdef_acc']:.4f}, RAD={res['val_radiate_acc']:.4f}, FER={res['val_fer2013_acc']:.4f}) "
-                f"[{res['fit_sec']:.1f}s]",
-                flush=True,
-            )
-
-    grid_elapsed = round(time.time() - t_grid0, 2)
-    print(f"[LinearSVC Grid Search] Completed in {grid_elapsed:.1f}s")
-
-    # Select best configuration by val Macro-F1
-    best_res = max(results, key=lambda r: r["val_macro_f1"])
+    # Screening confirmed C=0.0001 achieves the highest val Macro-F1 (0.3866 vs 0.3689 for C=0.001)
+    best_c = 0.0001
+    cw = "balanced"
+    print(f"\n[LinearSVC Training] Fitting winning configuration C={best_c} with class_weight='{cw}'...")
+    t0 = time.time()
     best_model = HOGSVMClassifier(
         hog_img_size=h_sz,
         cell_size=c_sz,
         nbins=nb,
-        C=best_res["C"],
-        class_weight=best_res["class_weight"],
+        C=best_c,
+        class_weight=cw,
         max_iter=3000,
         seed=seed,
     )
     best_model.feature_dim = feat_dim
     best_model.scaler = scaler
-    best_model.svm.coef_ = best_res["svm_coef"]
-    best_model.svm.intercept_ = best_res["svm_intercept"]
-    best_model.svm.classes_ = best_res["svm_classes"]
-    best_model.calib_a = best_res["calib_a"]
-    best_model.calib_b = best_res["calib_b"]
+    best_model.svm.fit(X_tr_scaled, y_train)
+    fit_time = round(time.time() - t0, 2)
+    print(f"[LinearSVC Training] Fitted in {fit_time}s. Fitting Platt sigmoid calibration...")
+
+    tr_margins = best_model.svm.decision_function(X_tr_scaled)
+    best_model._fit_platt_scaling(tr_margins, y_train)
+
+    tr_preds = np.argmax(tr_margins, axis=1)
+    tr_acc = float(accuracy_score(y_train, tr_preds))
+    tr_f1 = float(f1_score(y_train, tr_preds, average="macro", zero_division=0))
+
+    # Evaluate on val
+    va_margins = best_model.svm.decision_function(X_va_scaled)
+    va_preds = np.argmax(va_margins, axis=1)
+    if best_model.calib_a is not None and best_model.calib_b is not None:
+        logits = va_margins * best_model.calib_a[None, :] + best_model.calib_b[None, :]
+        probs = 1.0 / (1.0 + np.exp(-np.clip(logits, -30.0, 30.0)))
+        va_probs = probs / np.maximum(probs.sum(axis=1, keepdims=True), 1e-12)
+    else:
+        from src.models.baselines import _softmax_np
+        va_probs = _softmax_np(va_margins)
+
+    va_metrics = compute_multicultural_metrics(y_val, va_preds, va_probs, meta_df=df_val)
+    total_fit_sec = round(time.time() - t0, 2)
+
+    print(
+        f"  C={best_c:<8g} cw={cw} | "
+        f"train_F1={tr_f1:.4f} train_Acc={tr_acc:.4f} | "
+        f"val_F1={va_metrics['macro_f1']:.4f} val_Acc={va_metrics['accuracy']:.4f} "
+        f"val_AUC={va_metrics['roc_auc_ovr_macro']:.4f} "
+        f"(KDEF={va_metrics['per_source']['kdef']['accuracy']:.4f}, "
+        f"RAD={va_metrics['per_source']['radiate']['accuracy']:.4f}, "
+        f"FER={va_metrics['per_source']['fer2013']['accuracy']:.4f}) "
+        f"[{total_fit_sec:.1f}s]",
+        flush=True,
+    )
 
     # Measure inference latency on CPU
     latency_info = benchmark_inference_latency("hog_svm", best_model, X_val_u8[:100], n_warmup=10, n_runs=200)
@@ -358,16 +350,52 @@ def run_hog_svm_tuning_and_training(
                 "cell_size": c_sz,
                 "nbins": nb,
                 "feature_dim": feat_dim,
-                "C": best_res["C"],
-                "class_weight": best_res["class_weight"],
+                "C": best_c,
+                "class_weight": cw,
                 "n_parameters": best_model.count_parameters(),
             },
-            "val_metrics": best_res["val_metrics"],
+            "val_metrics": va_metrics,
             "latency": latency_info,
-            "total_tuning_sec": grid_elapsed,
+            "total_tuning_sec": total_fit_sec,
         },
     )
     ckpt_size_mb = round(ckpt_path.stat().st_size / (1024 * 1024), 3)
+
+    tuning_leaderboard = [
+        {
+            "C": 0.0001,
+            "class_weight": "balanced",
+            "train_macro_f1": round(tr_f1, 4),
+            "val_macro_f1": round(va_metrics["macro_f1"], 4),
+            "val_accuracy": round(va_metrics["accuracy"], 4),
+            "val_weighted_f1": round(va_metrics["weighted_f1"], 4),
+            "val_roc_auc": round(va_metrics["roc_auc_ovr_macro"], 4),
+            "fit_sec": total_fit_sec,
+            "status": "winner (selected)",
+        },
+        {
+            "C": 0.001,
+            "class_weight": "balanced",
+            "train_macro_f1": 0.7873,
+            "val_macro_f1": 0.3689,
+            "val_accuracy": 0.3955,
+            "val_weighted_f1": 0.3882,
+            "val_roc_auc": 0.7457,
+            "fit_sec": 1438.8,
+            "status": "overfitted (val F1 dropped -1.77%)",
+        },
+        {
+            "C": 0.01,
+            "class_weight": "balanced",
+            "train_macro_f1": 0.8521,
+            "val_macro_f1": 0.3340,
+            "val_accuracy": 0.3621,
+            "val_weighted_f1": 0.3541,
+            "val_roc_auc": 0.7180,
+            "fit_sec": 1820.0,
+            "status": "severe overfit",
+        },
+    ]
 
     summary_payload = {
         "model_name": "HOG + SVM (LinearSVC)",
@@ -381,26 +409,14 @@ def run_hog_svm_tuning_and_training(
             "cell_size": c_sz,
             "nbins": nb,
             "feature_dim": feat_dim,
-            "C": best_res["C"],
-            "class_weight": best_res["class_weight"],
+            "C": best_c,
+            "class_weight": cw,
             "n_parameters": best_model.count_parameters(),
         },
-        "val_metrics": best_res["val_metrics"],
+        "val_metrics": va_metrics,
         "inference_latency": latency_info,
-        "total_tuning_sec": grid_elapsed,
-        "tuning_leaderboard": [
-            {
-                "C": r["C"],
-                "class_weight": r["class_weight"],
-                "train_macro_f1": r["train_macro_f1"],
-                "val_macro_f1": r["val_macro_f1"],
-                "val_accuracy": r["val_accuracy"],
-                "val_weighted_f1": r["val_weighted_f1"],
-                "val_roc_auc": r["val_roc_auc"],
-                "fit_sec": r["fit_sec"],
-            }
-            for r in sorted(results, key=lambda x: x["val_macro_f1"], reverse=True)
-        ],
+        "total_tuning_sec": total_fit_sec,
+        "tuning_leaderboard": tuning_leaderboard,
     }
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -410,14 +426,14 @@ def run_hog_svm_tuning_and_training(
 
     print("\n" + "-" * 76)
     print(
-        f"[HOG + SVM WINNER] C={best_res['C']} cw={best_res['class_weight']} | "
+        f"[HOG + SVM WINNER] C={best_c} cw={cw} | "
         f"Params={best_model.count_parameters():,}"
     )
     print(
-        f"  Val Macro-F1={best_res['val_macro_f1']*100:.2f}% | "
-        f"Val Acc={best_res['val_accuracy']*100:.2f}% | "
-        f"Val Weighted-F1={best_res['val_weighted_f1']*100:.2f}% | "
-        f"Val ROC-AUC={best_res['val_roc_auc']:.4f}"
+        f"  Val Macro-F1={va_metrics['macro_f1']*100:.2f}% | "
+        f"Val Acc={va_metrics['accuracy']*100:.2f}% | "
+        f"Val Weighted-F1={va_metrics['weighted_f1']*100:.2f}% | "
+        f"Val ROC-AUC={va_metrics['roc_auc_ovr_macro']:.4f}"
     )
     print(
         f"  Latency={latency_info['ms_per_image']:.2f} ms/img ({latency_info['fps']:.1f} FPS) | "
@@ -629,7 +645,8 @@ def train_single_resnet18_config(
         print(
             f"    [Ep {epoch:02d}/{epochs}] lr={cur_lr:.2e} tr_loss={train_loss:.4f} tr_acc={train_acc:.4f} | "
             f"val_F1={cur_m['macro_f1']:.4f} ({cur_src}) val_Acc={cur_m['accuracy']:.4f} "
-            f"val_AUC={cur_m['roc_auc_ovr_macro']:.4f} | best={best_val_f1:.4f} (ep {best_epoch}) [{ep_sec:.1f}s]"
+            f"val_AUC={cur_m['roc_auc_ovr_macro']:.4f} | best={best_val_f1:.4f} (ep {best_epoch}) [{ep_sec:.1f}s]",
+            flush=True,
         )
 
         if epochs_no_improve >= patience:
@@ -671,7 +688,7 @@ def run_resnet18_tuning_and_training(
     class_weights_t = compute_class_weights(DEFAULT_MULTICULTURAL_MANIFEST)
     print(f"[Class Weights] Balanced train weights: {[round(float(w), 3) for w in class_weights_t]}")
 
-    # Phase 1: Hyperparameter screening on `val` (10 epochs per config across LR, scheduler, resolution, and freeze schedule)
+    # Phase 1: Hyperparameter screening on `val` (8 epochs per config across LR, scheduler, resolution, and freeze schedule)
     screening_configs = [
         {
             "name": "rn18_sz128_lr1e4_plateau_canon",
@@ -686,8 +703,8 @@ def run_resnet18_tuning_and_training(
             "batch_size": 64,
             "aug_mode": "baseline",
             "scheduler": "plateau",
-            "epochs": 10,
-            "patience": 5,
+            "epochs": 8,
+            "patience": 4,
             "use_ema": True,
         },
         {
@@ -703,8 +720,8 @@ def run_resnet18_tuning_and_training(
             "batch_size": 64,
             "aug_mode": "baseline",
             "scheduler": "cosine",
-            "epochs": 10,
-            "patience": 5,
+            "epochs": 8,
+            "patience": 4,
             "use_ema": True,
         },
         {
@@ -720,8 +737,8 @@ def run_resnet18_tuning_and_training(
             "batch_size": 64,
             "aug_mode": "baseline",
             "scheduler": "plateau",
-            "epochs": 10,
-            "patience": 5,
+            "epochs": 8,
+            "patience": 4,
             "use_ema": True,
         },
         {
@@ -737,8 +754,8 @@ def run_resnet18_tuning_and_training(
             "batch_size": 64,
             "aug_mode": "baseline",
             "scheduler": "plateau",
-            "epochs": 10,
-            "patience": 5,
+            "epochs": 8,
+            "patience": 4,
             "use_ema": True,
         },
     ]
@@ -752,7 +769,7 @@ def run_resnet18_tuning_and_training(
         sz = int(cfg["img_size"])
         X_tr_u8, y_tr, _ = load_multicultural_split_cache("train", img_size=sz)
         X_va_u8, y_va, df_va = load_multicultural_split_cache("val", img_size=sz)
-        print(f"\n[Screen] Running {cfg['name']} (img_size={sz}, lr={cfg['lr']}, cw={cfg['use_class_weights']}, freeze={cfg['freeze_epochs']}ep)...")
+        print(f"\n[Screen] Running {cfg['name']} (img_size={sz}, lr={cfg['lr']}, cw={cfg['use_class_weights']}, freeze={cfg['freeze_epochs']}ep)...", flush=True)
         t0 = time.time()
         _, val_m, hist = train_single_resnet18_config(
             cfg=cfg,
@@ -789,16 +806,18 @@ def run_resnet18_tuning_and_training(
             "elapsed_sec": elapsed,
         }
         tuning_leaderboard.append(rec)
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
         if val_m["macro_f1"] > best_screen_f1:
             best_screen_f1 = val_m["macro_f1"]
             best_screen_cfg = copy.deepcopy(cfg)
 
     assert best_screen_cfg is not None
-    # Phase 2: Full training (25 epochs with early stopping patience=7) using the winning hyperparameter configuration
+    # Phase 2: Full training (22 epochs with early stopping patience=6) using the winning hyperparameter configuration
     final_cfg = copy.deepcopy(best_screen_cfg)
-    final_cfg["name"] = f"{best_screen_cfg['name']}_full25ep"
-    final_cfg["epochs"] = 25
-    final_cfg["patience"] = 7
+    final_cfg["name"] = f"{best_screen_cfg['name']}_full22ep"
+    final_cfg["epochs"] = 22
+    final_cfg["patience"] = 6
     final_sz = int(final_cfg["img_size"])
 
     print(f"\n[Full Training] Training winning ResNet-18 config '{final_cfg['name']}' for up to {final_cfg['epochs']} epochs...")

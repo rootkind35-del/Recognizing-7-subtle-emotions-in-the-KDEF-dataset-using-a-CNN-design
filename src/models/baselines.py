@@ -677,9 +677,12 @@ def save_resnet18_checkpoint(
 def load_resnet18_checkpoint(
     checkpoint_path: Union[str, Path],
     device: Optional[torch.device] = None,
+    map_location: Optional[Union[str, torch.device]] = None,
     input_is_normalized_1ch: bool = False,
 ) -> Tuple[ResNet18Emotion, Dict[str, Any]]:
-    if device is None:
+    if map_location is not None:
+        device = torch.device(map_location)
+    elif device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
     cfg = ckpt.get("config", {})
