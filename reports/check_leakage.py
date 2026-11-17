@@ -215,8 +215,13 @@ def audit_multicultural_manifest(manifest_path: str) -> dict:
         and len(multi_subjects) == 0
     )
 
+    try:
+        manifest_label = os.path.relpath(manifest_path, ROOT).replace("\\", "/")
+    except ValueError:
+        manifest_label = os.path.abspath(manifest_path).replace("\\", "/")
+
     return {
-        "manifest_path": os.path.relpath(manifest_path, ROOT).replace("\\", "/"),
+        "manifest_path": manifest_label,
         "passed": passed,
         "total_rows": int(len(df)),
         "split_counts": split_counts,

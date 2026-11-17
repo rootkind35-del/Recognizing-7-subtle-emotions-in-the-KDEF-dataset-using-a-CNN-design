@@ -28,6 +28,7 @@ _SSD_PROTOTXT = _PREPROC_DIR / "models" / "deploy.prototxt"
 _SSD_CAFFEMODEL = _PREPROC_DIR / "models" / "res10_300x300_ssd_iter_140000.caffemodel"
 _SSD_NET = None
 _SSD_UNAVAILABLE = False
+_HAAR_WARNED = False
 
 
 def _get_ssd_net():
@@ -40,7 +41,7 @@ def _get_ssd_net():
             _SSD_UNAVAILABLE = True
             warnings.warn(
                 f"OpenCV {cv2.__version__} does not provide cv2.dnn.readNetFromCaffe; "
-                "SSD face detection disabled, falling back to Haar/default crop.",
+                "SSD face detection disabled, falling back to Haar (if available)/default crop.",
                 RuntimeWarning,
                 stacklevel=2,
             )
@@ -326,11 +327,38 @@ class FaceAligner:
     """Face detector & square-pad aligner matching the training `ssd_pad_160_1ch` pipeline."""
 
     def __init__(self, use_ssd: bool = True, ssd_margin: float = DEFAULT_SSD_MARGIN):
+        global _HAAR_WARNED
         self.use_ssd = use_ssd
         self.ssd_margin = ssd_margin
         current_dir = os.path.dirname(os.path.abspath(__file__))
         cascade_path = os.path.join(current_dir, "haarcascade_frontalface_default.xml")
-        self.face_cascade = cv2.CascadeClassifier(cascade_path)
+        has_cascade_cls = hasattr(cv2, "CascadeClassifier")
+        has_cascade_xml = os.path.exists(cascade_path)
+        if has_cascade_cls and has_cascade_xml:
+            cascade = cv2.CascadeClassifier(cascade_path)
+            if cascade.empty():
+                self.face_cascade = None
+                if not _HAAR_WARNED:
+                    _HAAR_WARNED = True
+                    warnings.warn(
+                        f"OpenCV {cv2.__version__} loaded an empty Haar cascade from {cascade_path}; "
+                        "FaceAligner Haar fallback disabled.",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )
+            else:
+                self.face_cascade = cascade
+        else:
+            self.face_cascade = None
+            if not _HAAR_WARNED:
+                _HAAR_WARNED = True
+                warnings.warn(
+                    f"OpenCV {cv2.__version__} Haar cascade unavailable "
+                    f"(CascadeClassifier={has_cascade_cls}, xml_exists={has_cascade_xml}); "
+                    "FaceAligner Haar fallback disabled.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
 
     def align_and_crop(
         self,
@@ -359,6 +387,8 @@ class FaceAligner:
                     return cv2.resize(cropped, target_size, interpolation=cv2.INTER_AREA)
 
         # Fallback to Haar Cascade if SSD misses
+        if self.face_cascade is None:
+            return None
         gray = cv2.equalizeHist(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY))
         faces = self.face_cascade.detectMultiScale(
             gray, scaleFactor=1.05, minNeighbors=3, minSize=(30, 30)
