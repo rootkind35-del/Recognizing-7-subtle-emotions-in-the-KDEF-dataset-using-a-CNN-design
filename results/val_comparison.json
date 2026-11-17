@@ -14,273 +14,539 @@
   "models": {
     "cnn": {
       "name": "KDEF_Stem2Ch_MS4_Symmetric (CNN chính)",
-      "checkpoint": "checkpoints/final_model.pt",
-      "checkpoint_mb": 4.888,
+      "checkpoint": "checkpoints/cnn_multicultural.pt",
+      "checkpoint_mb": 4.895,
       "n_parameters": 1273005,
       "macs": 1324712832,
-      "input": "xám 160x160, CLAHE=True, mean=0.407255, std=0.209657",
+      "input": "xám 160x160, CLAHE=True, mean=0.517243, std=0.264053",
       "eval_mode": "single_view",
-      "val_macro_f1_ckpt": 0.9281725709136973,
+      "val_macro_f1_ckpt": 0.695073,
       "latency_cpu": {
-        "ms_per_image": 16.199,
-        "ms_median": 15.587,
-        "ms_p95": 19.297,
-        "fps": 61.7,
+        "ms_per_image": 18.585,
+        "ms_median": 18.119,
+        "ms_p95": 21.459,
+        "fps": 53.8,
         "n_runs": 300
       },
       "latency_gpu": {
-        "ms_per_image": 1.757,
-        "ms_median": 1.688,
-        "ms_p95": 2.18,
-        "fps": 569.3,
+        "ms_per_image": 2.055,
+        "ms_median": 1.777,
+        "ms_p95": 3.616,
+        "fps": 486.7,
         "n_runs": 300
       },
       "metrics": {
         "n_samples": 3990,
-        "n_correct": 1040,
-        "accuracy": 0.260652,
-        "macro_f1": 0.263486,
-        "weighted_f1": 0.254823,
-        "roc_auc_ovr_macro": 0.696357,
-        "roc_auc_ovr_weighted": 0.673922,
-        "recall_spread": 0.5218,
+        "n_correct": 2768,
+        "accuracy": 0.693734,
+        "macro_f1": 0.694675,
+        "weighted_f1": 0.692129,
+        "roc_auc_ovr_macro": 0.930021,
+        "roc_auc_ovr_weighted": 0.925298,
+        "recall_spread": 0.3944,
         "per_class_precision": {
-          "angry": 0.171,
-          "disgust": 0.1679,
-          "fear": 0.2542,
-          "happy": 0.7056,
-          "neutral": 0.5536,
-          "sad": 0.3397,
-          "surprise": 0.693
+          "angry": 0.6712,
+          "disgust": 0.8201,
+          "fear": 0.581,
+          "happy": 0.8807,
+          "neutral": 0.6286,
+          "sad": 0.5735,
+          "surprise": 0.7153
         },
         "per_class_recall": {
-          "angry": 0.5688,
-          "disgust": 0.6525,
-          "fear": 0.3327,
-          "happy": 0.1307,
-          "neutral": 0.1358,
-          "sad": 0.221,
-          "surprise": 0.2079
+          "angry": 0.645,
+          "disgust": 0.8085,
+          "fear": 0.4564,
+          "happy": 0.8508,
+          "neutral": 0.6993,
+          "sad": 0.6091,
+          "surprise": 0.8132
         },
         "per_class_f1": {
-          "angry": 0.263,
-          "disgust": 0.2671,
-          "fear": 0.2882,
-          "happy": 0.2205,
-          "neutral": 0.2181,
-          "sad": 0.2678,
-          "surprise": 0.3198
+          "angry": 0.6578,
+          "disgust": 0.8143,
+          "fear": 0.5112,
+          "happy": 0.8655,
+          "neutral": 0.6621,
+          "sad": 0.5908,
+          "surprise": 0.7611
         },
         "per_class_auc": {
-          "angry": 0.6213,
-          "disgust": 0.8641,
-          "fear": 0.6712,
-          "happy": 0.7055,
-          "neutral": 0.626,
-          "sad": 0.6463,
-          "surprise": 0.7402
+          "angry": 0.9167,
+          "disgust": 0.9857,
+          "fear": 0.8612,
+          "happy": 0.9777,
+          "neutral": 0.9177,
+          "sad": 0.8828,
+          "surprise": 0.9683
         },
         "confusion_matrix": [
           [
-            306,
-            108,
-            67,
-            5,
-            9,
-            41,
-            2
+            347,
+            10,
+            44,
+            22,
+            39,
+            61,
+            15
           ],
           [
-            30,
-            92,
-            3,
-            8,
+            15,
+            114,
+            2,
+            4,
             1,
-            7,
+            5,
             0
           ],
           [
-            204,
-            58,
-            183,
+            42,
+            4,
+            251,
+            13,
+            55,
+            128,
+            57
+          ],
+          [
             14,
-            10,
-            68,
-            13
+            1,
+            11,
+            827,
+            67,
+            26,
+            26
           ],
           [
-            469,
-            139,
-            130,
-            127,
-            18,
-            83,
-            6
-          ],
-          [
-            330,
-            52,
-            115,
-            10,
-            93,
-            75,
+            28,
+            2,
+            30,
+            36,
+            479,
+            100,
             10
           ],
           [
-            351,
-            74,
-            106,
-            6,
-            23,
-            160,
-            4
+            61,
+            8,
+            60,
+            27,
+            112,
+            441,
+            15
           ],
           [
-            99,
-            25,
-            116,
             10,
-            14,
-            37,
-            79
+            0,
+            34,
+            10,
+            9,
+            8,
+            309
           ]
         ],
         "per_source": {
           "kdef": {
             "n_samples": 559,
-            "n_correct": 510,
-            "accuracy": 0.912343,
-            "macro_f1": 0.91267,
-            "weighted_f1": 0.912789,
-            "roc_auc_ovr_macro": 0.993736,
+            "n_correct": 494,
+            "accuracy": 0.883721,
+            "macro_f1": 0.883642,
+            "weighted_f1": 0.883628,
+            "roc_auc_ovr_macro": 0.991324,
             "per_class_recall": {
-              "angry": 0.8625,
-              "disgust": 0.8354,
-              "fear": 0.925,
+              "angry": 0.8375,
+              "disgust": 0.8861,
+              "fear": 0.775,
               "happy": 0.9875,
-              "neutral": 0.9375,
-              "sad": 0.9125,
-              "surprise": 0.925
+              "neutral": 0.925,
+              "sad": 0.8625,
+              "surprise": 0.9125
             },
             "per_class_f1": {
-              "angry": 0.92,
-              "disgust": 0.8462,
-              "fear": 0.8862,
-              "happy": 0.9518,
-              "neutral": 0.9554,
-              "sad": 0.8743,
-              "surprise": 0.9548
+              "angry": 0.8933,
+              "disgust": 0.8917,
+              "fear": 0.7898,
+              "happy": 0.9634,
+              "neutral": 0.9367,
+              "sad": 0.8415,
+              "surprise": 0.869
             }
           },
           "radiate": {
             "n_samples": 148,
-            "n_correct": 52,
-            "accuracy": 0.351351,
-            "macro_f1": 0.30018,
-            "weighted_f1": 0.306115,
-            "roc_auc_ovr_macro": 0.814525,
+            "n_correct": 128,
+            "accuracy": 0.864865,
+            "macro_f1": 0.838295,
+            "weighted_f1": 0.860025,
+            "roc_auc_ovr_macro": 0.975054,
             "per_class_recall": {
-              "angry": 0.3636,
-              "disgust": 0.6818,
+              "angry": 0.8636,
+              "disgust": 0.9545,
               "fear": 0.7273,
-              "happy": 0.2333,
-              "neutral": 0.0,
-              "sad": 0.15,
-              "surprise": 0.3
+              "happy": 1.0,
+              "neutral": 1.0,
+              "sad": 0.7,
+              "surprise": 0.6
             },
             "per_class_f1": {
-              "angry": 0.2963,
-              "disgust": 0.4348,
-              "fear": 0.4776,
-              "happy": 0.359,
-              "neutral": 0.0,
-              "sad": 0.2609,
-              "surprise": 0.2727
+              "angry": 0.8837,
+              "disgust": 0.875,
+              "fear": 0.7805,
+              "happy": 0.9677,
+              "neutral": 0.9167,
+              "sad": 0.7778,
+              "surprise": 0.6667
             }
           },
           "fer2013": {
             "n_samples": 3283,
-            "n_correct": 478,
-            "accuracy": 0.145599,
-            "macro_f1": 0.108924,
-            "weighted_f1": 0.118836,
-            "roc_auc_ovr_macro": 0.578193,
+            "n_correct": 2146,
+            "accuracy": 0.65367,
+            "macro_f1": 0.631182,
+            "weighted_f1": 0.651656,
+            "roc_auc_ovr_macro": 0.908146,
             "per_class_recall": {
-              "angry": 0.5252,
-              "disgust": 0.275,
-              "fear": 0.2076,
-              "happy": 0.0476,
-              "neutral": 0.0309,
-              "sad": 0.1346,
-              "surprise": 0.0069
+              "angry": 0.5986,
+              "disgust": 0.575,
+              "fear": 0.3862,
+              "happy": 0.8329,
+              "neutral": 0.6569,
+              "sad": 0.5737,
+              "surprise": 0.7931
             },
             "per_class_f1": {
-              "angry": 0.2157,
-              "disgust": 0.0474,
-              "fear": 0.1795,
-              "happy": 0.0866,
-              "neutral": 0.0534,
-              "sad": 0.1672,
-              "surprise": 0.0126
+              "angry": 0.6056,
+              "disgust": 0.6133,
+              "fear": 0.4413,
+              "happy": 0.8522,
+              "neutral": 0.6172,
+              "sad": 0.5538,
+              "surprise": 0.7348
             }
           }
         },
         "per_ethnic_group": {
           "KDEF": {
             "n_samples": 559,
-            "n_correct": 510,
-            "accuracy": 0.912343,
-            "macro_f1": 0.91267
+            "n_correct": 494,
+            "accuracy": 0.883721,
+            "macro_f1": 0.883642
           },
           "B": {
             "n_samples": 54,
-            "n_correct": 15,
-            "accuracy": 0.277778,
-            "macro_f1": 0.178702
+            "n_correct": 45,
+            "accuracy": 0.833333,
+            "macro_f1": 0.787866
           },
           "A": {
             "n_samples": 27,
-            "n_correct": 9,
-            "accuracy": 0.333333,
-            "macro_f1": 0.354195
+            "n_correct": 22,
+            "accuracy": 0.814815,
+            "macro_f1": 0.797774
           },
           "H": {
             "n_samples": 26,
-            "n_correct": 11,
-            "accuracy": 0.423077,
-            "macro_f1": 0.310204
+            "n_correct": 20,
+            "accuracy": 0.769231,
+            "macro_f1": 0.761492
           },
           "W": {
             "n_samples": 41,
-            "n_correct": 17,
-            "accuracy": 0.414634,
-            "macro_f1": 0.391968
+            "n_correct": 41,
+            "accuracy": 1.0,
+            "macro_f1": 1.0
           },
           "FER": {
             "n_samples": 3283,
-            "n_correct": 478,
-            "accuracy": 0.145599,
-            "macro_f1": 0.108924
+            "n_correct": 2146,
+            "accuracy": 0.65367,
+            "macro_f1": 0.631182
           }
         },
         "per_gender": {
           "female": {
             "n_samples": 304,
-            "accuracy": 0.730263,
-            "macro_f1": 0.735169
+            "accuracy": 0.858553,
+            "macro_f1": 0.856209
           },
           "male": {
             "n_samples": 403,
-            "accuracy": 0.843672,
-            "macro_f1": 0.847441
+            "accuracy": 0.895782,
+            "macro_f1": 0.893594
           }
         },
         "angle_accuracy": {
           "FL": 0.90991,
-          "FR": 0.910714,
-          "HL": 0.892857,
-          "HR": 0.955357,
+          "FR": 0.8125,
+          "HL": 0.901786,
+          "HR": 0.901786,
           "S": 0.892857
+        }
+      }
+    },
+    "hog_svm": {
+      "name": "HOG + SVM (LinearSVC)",
+      "checkpoint": "checkpoints/hog_svm_multicultural.pkl",
+      "checkpoint_mb": 0.281,
+      "n_parameters": 56707,
+      "macs": 56700,
+      "input": "HOG 128x128, ô 8, 9 hướng -> 8100 chiều, C=0.0001, class_weight=balanced",
+      "eval_mode": "single_view",
+      "val_macro_f1_ckpt": 0.386557,
+      "latency_cpu": {
+        "ms_per_image": 0.468,
+        "ms_median": 0.411,
+        "ms_p95": 0.796,
+        "fps": 2138.3,
+        "n_runs": 300
+      },
+      "latency_gpu": null,
+      "metrics": {
+        "n_samples": 3990,
+        "n_correct": 1677,
+        "accuracy": 0.420301,
+        "macro_f1": 0.386557,
+        "weighted_f1": 0.41104,
+        "roc_auc_ovr_macro": 0.773902,
+        "roc_auc_ovr_weighted": 0.762656,
+        "recall_spread": 0.4956,
+        "per_class_precision": {
+          "angry": 0.3411,
+          "disgust": 0.2251,
+          "fear": 0.297,
+          "happy": 0.6059,
+          "neutral": 0.4366,
+          "sad": 0.3592,
+          "surprise": 0.4
+        },
+        "per_class_recall": {
+          "angry": 0.2993,
+          "disgust": 0.6738,
+          "fear": 0.1782,
+          "happy": 0.6502,
+          "neutral": 0.4073,
+          "sad": 0.2624,
+          "surprise": 0.5842
+        },
+        "per_class_f1": {
+          "angry": 0.3188,
+          "disgust": 0.3375,
+          "fear": 0.2227,
+          "happy": 0.6273,
+          "neutral": 0.4215,
+          "sad": 0.3033,
+          "surprise": 0.4749
+        },
+        "per_class_auc": {
+          "angry": 0.7267,
+          "disgust": 0.8952,
+          "fear": 0.6565,
+          "happy": 0.8589,
+          "neutral": 0.7456,
+          "sad": 0.6863,
+          "surprise": 0.8482
+        },
+        "confusion_matrix": [
+          [
+            161,
+            72,
+            50,
+            66,
+            70,
+            68,
+            51
+          ],
+          [
+            11,
+            95,
+            7,
+            11,
+            5,
+            5,
+            7
+          ],
+          [
+            63,
+            55,
+            98,
+            82,
+            76,
+            86,
+            90
+          ],
+          [
+            56,
+            65,
+            23,
+            632,
+            71,
+            62,
+            63
+          ],
+          [
+            60,
+            40,
+            54,
+            97,
+            279,
+            97,
+            58
+          ],
+          [
+            95,
+            78,
+            66,
+            121,
+            110,
+            190,
+            64
+          ],
+          [
+            26,
+            17,
+            32,
+            34,
+            28,
+            21,
+            222
+          ]
+        ],
+        "per_source": {
+          "kdef": {
+            "n_samples": 559,
+            "n_correct": 223,
+            "accuracy": 0.398927,
+            "macro_f1": 0.37125,
+            "weighted_f1": 0.37116,
+            "roc_auc_ovr_macro": 0.786325,
+            "per_class_recall": {
+              "angry": 0.325,
+              "disgust": 0.8734,
+              "fear": 0.0625,
+              "happy": 0.45,
+              "neutral": 0.375,
+              "sad": 0.1375,
+              "surprise": 0.575
+            },
+            "per_class_f1": {
+              "angry": 0.4262,
+              "disgust": 0.422,
+              "fear": 0.101,
+              "happy": 0.5106,
+              "neutral": 0.438,
+              "sad": 0.2115,
+              "surprise": 0.4894
+            }
+          },
+          "radiate": {
+            "n_samples": 148,
+            "n_correct": 62,
+            "accuracy": 0.418919,
+            "macro_f1": 0.378558,
+            "weighted_f1": 0.397765,
+            "roc_auc_ovr_macro": 0.789181,
+            "per_class_recall": {
+              "angry": 0.3636,
+              "disgust": 0.8182,
+              "fear": 0.3182,
+              "happy": 0.5333,
+              "neutral": 0.4091,
+              "sad": 0.0,
+              "surprise": 0.4
+            },
+            "per_class_f1": {
+              "angry": 0.4324,
+              "disgust": 0.439,
+              "fear": 0.4,
+              "happy": 0.5714,
+              "neutral": 0.4737,
+              "sad": 0.0,
+              "surprise": 0.3333
+            }
+          },
+          "fer2013": {
+            "n_samples": 3283,
+            "n_correct": 1392,
+            "accuracy": 0.424002,
+            "macro_f1": 0.354681,
+            "weighted_f1": 0.416599,
+            "roc_auc_ovr_macro": 0.753313,
+            "per_class_recall": {
+              "angry": 0.2913,
+              "disgust": 0.2,
+              "fear": 0.192,
+              "happy": 0.6729,
+              "neutral": 0.4117,
+              "sad": 0.2869,
+              "surprise": 0.5931
+            },
+            "per_class_f1": {
+              "angry": 0.2985,
+              "disgust": 0.1039,
+              "fear": 0.2306,
+              "happy": 0.6381,
+              "neutral": 0.4178,
+              "sad": 0.3182,
+              "surprise": 0.4758
+            }
+          }
+        },
+        "per_ethnic_group": {
+          "KDEF": {
+            "n_samples": 559,
+            "n_correct": 223,
+            "accuracy": 0.398927,
+            "macro_f1": 0.37125
+          },
+          "B": {
+            "n_samples": 54,
+            "n_correct": 19,
+            "accuracy": 0.351852,
+            "macro_f1": 0.313459
+          },
+          "A": {
+            "n_samples": 27,
+            "n_correct": 10,
+            "accuracy": 0.37037,
+            "macro_f1": 0.303046
+          },
+          "H": {
+            "n_samples": 26,
+            "n_correct": 10,
+            "accuracy": 0.384615,
+            "macro_f1": 0.312925
+          },
+          "W": {
+            "n_samples": 41,
+            "n_correct": 23,
+            "accuracy": 0.560976,
+            "macro_f1": 0.53728
+          },
+          "FER": {
+            "n_samples": 3283,
+            "n_correct": 1392,
+            "accuracy": 0.424002,
+            "macro_f1": 0.354681
+          }
+        },
+        "per_gender": {
+          "female": {
+            "n_samples": 304,
+            "accuracy": 0.407895,
+            "macro_f1": 0.385685
+          },
+          "male": {
+            "n_samples": 403,
+            "accuracy": 0.399504,
+            "macro_f1": 0.372459
+          }
+        },
+        "angle_accuracy": {
+          "FL": 0.261261,
+          "FR": 0.3125,
+          "HL": 0.375,
+          "HR": 0.348214,
+          "S": 0.696429
         }
       }
     }

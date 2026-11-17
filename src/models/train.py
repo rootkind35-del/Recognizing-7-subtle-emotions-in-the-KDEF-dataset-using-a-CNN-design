@@ -1013,6 +1013,25 @@ def train_cnn_run(
             best_epoch = ep
             no_improve = 0
             best_state_dict = {k: v.detach().cpu().clone() for k, v in eval_target.state_dict().items()}
+            if save_ckpt_path is not None:
+                try:
+                    torch.save(
+                        {
+                            "model_state": best_state_dict,
+                            "state_dict": best_state_dict,
+                            "model_name": model.model_name,
+                            "arch": model.model_name,
+                            "epoch": best_epoch,
+                            "val_f1": best_val_f1,
+                            "val_macro_f1": best_val_f1,
+                            "val_accuracy": best_val_acc,
+                            "history": history,
+                            "config": asdict(cfg),
+                        },
+                        save_ckpt_path,
+                    )
+                except Exception:
+                    pass
         else:
             no_improve += 1
 
