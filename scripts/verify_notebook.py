@@ -27,7 +27,11 @@ try:
 except Exception:
     pass
 
-import nbformat  # noqa: E402
+try:
+    import nbformat  # noqa: E402
+    HAS_NBFORMAT = True
+except ModuleNotFoundError:
+    HAS_NBFORMAT = False
 
 GOC_REPO = Path(__file__).resolve().parent.parent
 NB_MAC_DINH = GOC_REPO / "notebooks" / "CNN_KDEF_FER.ipynb"
@@ -109,7 +113,29 @@ def main():
     if not duong_nb.exists():
         print(f"LỖI: không tìm thấy notebook: {duong_nb}")
         return 1
-    nb = nbformat.read(str(duong_nb), as_version=4)
+    if HAS_NBFORMAT:
+        nb = nbformat.read(str(duong_nb), as_version=4)
+    else:
+        with open(str(duong_nb), encoding="utf-8") as f:
+            data = json.load(f)
+
+        class Cell(dict):
+            @property
+            def cell_type(self):
+                return self.get("cell_type")
+
+            @property
+            def source(self):
+                src = self.get("source", "")
+                if isinstance(src, list):
+                    return "".join(src)
+                return str(src)
+
+        class Notebook:
+            def __init__(self, d):
+                self.cells = [Cell(c) for c in d.get("cells", [])]
+
+        nb = Notebook(data)
 
     loi = []
     kiem_tra_thuc_thi(nb, loi)

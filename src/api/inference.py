@@ -27,7 +27,18 @@ from src.utils.device import get_device
 
 DEFAULT_CHECKPOINT_CANDIDATES = (
     "checkpoints/final_model.pt",
+    "checkpoints/cnn_multicultural.pt",
 )
+
+EMOTION_VI = {
+    "Angry": "Giận dữ",
+    "Disgust": "Ghê tởm",
+    "Fear": "Sợ hãi",
+    "Happy": "Vui vẻ",
+    "Neutral": "Trung tính",
+    "Sad": "Buồn",
+    "Surprise": "Ngạc nhiên",
+}
 
 
 def resolve_default_checkpoint() -> str:
@@ -91,7 +102,17 @@ class EmotionRecognizer:
             return self.model.get_gradcam_target_layers()
         return [self.model.s4_ms.eca]
 
-    def predict_image(self, image: np.ndarray, auto_fallback: bool = True):
+    def predict_image(
+        self,
+        image: np.ndarray,
+        auto_fallback: bool = True,
+        return_probabilities: bool = False,
+    ):
+        if image is None or not isinstance(image, np.ndarray) or image.size == 0:
+            if return_probabilities:
+                return None, 0.0, {}
+            return None, 0.0
+
         # 1. Phát hiện và cắt khuôn mặt theo đúng ssd_pad_160_1ch (SSD square-pad + fallback)
         if not self.use_crop or self.crop_mode == "none":
             face = image
@@ -113,8 +134,12 @@ class EmotionRecognizer:
                             ssd_margin=self.ssd_margin,
                         )
                     except Exception:
+                        if return_probabilities:
+                            return None, 0.0, {}
                         return None, "No face detected"
                 else:
+                    if return_probabilities:
+                        return None, 0.0, {}
                     return None, "No face detected"
 
         # 2. Tiền xử lý grayscale 160x160 (+ CLAHE nếu checkpoint sử dụng)
@@ -128,7 +153,19 @@ class EmotionRecognizer:
             probabilities = torch.nn.functional.softmax(outputs, dim=1)[0]
             confidence, predicted = torch.max(probabilities, 0)
 
-        return self.emotions[predicted.item()], confidence.item()
+        pred_emotion = self.emotions[predicted.item()]
+        conf_val = float(confidence.item())
+        probs_dict = {
+            emo: float(probabilities[i].item()) for i, emo in enumerate(self.emotions)
+        }
+
+        if return_probabilities:
+            return pred_emotion, conf_val, probs_dict
+        return pred_emotion, conf_val
+
+    def predict_image_full(self, image: np.ndarray):
+        """Trả về đầy đủ: (emotion, confidence, probabilities_dict, face_crop)."""
+        return self.predict_image(image, auto_fallback=True, return_probabilities=True)
 
 def run_webcam(model_path: str = None):
     recognizer = EmotionRecognizer(model_path)
