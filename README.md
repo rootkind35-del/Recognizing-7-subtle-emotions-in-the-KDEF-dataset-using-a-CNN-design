@@ -1,6 +1,6 @@
 # Nhận Dạng Cảm Xúc Khuôn Mặt (Facial Emotion Recognition — KDEF)
 
-Dự án nhận dạng 7 cảm xúc khuôn mặt (`angry`, `disgust`, `fear`, `happy`, `neutral`, `sad`, `surprise`) trên bộ dữ liệu **KDEF official** (`data/official-kdef-dataset-by-ksatrajit0`, chia nghiêm ngặt theo người **subject-disjoint**: **3.349 train / 559 val / 980 test** sau khi loại 10 khung đen hỏng MD5 `320b34032e2133fdfb80a58c953d5c94`) bằng kiến trúc CNN tự thiết kế **`KDEF_Stem2Ch_MS4_Symmetric`** (`stem2ch_ms4_fuse`, **1.273.005** tham số).
+Dự án nhận dạng 7 cảm xúc khuôn mặt (`angry`, `disgust`, `fear`, `happy`, `neutral`, `sad`, `surprise`) trên bộ dữ liệu **KDEF official** (`data/official-kdef-dataset-by-ksatrajit0`, chia nghiêm ngặt theo người **subject-disjoint**: **3.349 train / 559 val / 980 test** sau khi loại 10 khung đen hỏng MD5 `320b34032e2133fdfb80a58c953d5c94`) bằng kiến trúc CNN đề xuất **`KDEF_Stem2Ch_MS4_Symmetric`** (`stem2ch_ms4_fuse`, **1.273.005** tham số).
 
 > **Quy chuẩn kho mã nguồn:** Toàn bộ quy trình EDA, tiền xử lý `ssd_pad_160_1ch`, huấn luyện 60 epoch (`ASAM + Focal-CE + SupCon + FlipConsistency + CutMix/Mixup/SplitMix + EMA`) và đánh giá 1 lần trên tập test nằm gọn trong [`notebooks/CNN_KDEF_FER.ipynb`](notebooks/CNN_KDEF_FER.ipynb). Bên ngoài notebook chỉ giữ tài liệu, công cụ kiểm định chống rò rỉ và các module chạy đánh giá / API / Web UI / Camera.
 

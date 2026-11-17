@@ -131,7 +131,7 @@ Số liệu trích xuất xác thực từ [`reports/papers_research.md`](papers
 | **Akhand et al. (2021)** | 10% random *(subject-dependent)* | 4.900 ảnh 5 góc, 7 lớp | CNN 2 tầng (`48` / `64` / **`128`** / `224`) | 61,6% / 69,4% / **80,8%** / 73,5% |
 | **Akhand et al. (2021)** | 10% random *(subject-dependent)* | 4.900 ảnh 5 góc, 7 lớp | `VGG-16` từ đầu / Transfer `VGG-16` | 23,4% / 96,5% |
 | **Shin et al. (2016)** | Cross-database (`FER2013 → KDEF`) | 2.961 ảnh KDEF | CNN 3 tầng + Histogram Eq. | 50,7% |
-| **Dự án (`KDEF_Stem2Ch_MS4_Symmetric`)** | **Subject-disjoint (48 / 8 / 14)** | **4.888 ảnh sạch (5 góc, 7 lớp)** | **CNN tự thiết kế 1,27M tham số (`Single-View`)** | **86,84% Acc / 0,8687 Macro-F1 / 0,9843 AUC** |
+| **Mô hình đề xuất (`KDEF_Stem2Ch_MS4_Symmetric`)** | **Subject-disjoint (Single-View)** | **4.888 ảnh sạch (5 góc, 7 lớp)** | **Kiến trúc CNN đối xứng đa tỉ lệ (1,27M tham số)** | **86,84% Acc / 0,8687 Macro-F1 / 0,9843 AUC** |
 
 ---
 
