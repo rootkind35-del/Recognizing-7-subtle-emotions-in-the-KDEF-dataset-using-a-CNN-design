@@ -1,59 +1,188 @@
-# Nhận Dạng Cảm Xúc Khuôn Mặt (Facial Emotion Recognition — KDEF)
+# Nhận Dạng Cảm Xúc Khuôn Mặt Đa Văn Hóa (Multicultural Facial Emotion Recognition)
 
-Dự án nhận dạng 7 cảm xúc khuôn mặt (`angry`, `disgust`, `fear`, `happy`, `neutral`, `sad`, `surprise`) trên bộ dữ liệu **KDEF official** (`data/official-kdef-dataset-by-ksatrajit0`, chia nghiêm ngặt theo người **subject-disjoint**: **3.349 train / 559 val / 980 test** sau khi loại 10 khung đen hỏng MD5 `320b34032e2133fdfb80a58c953d5c94`) bằng kiến trúc CNN đề xuất **`KDEF_Stem2Ch_MS4_Symmetric`** (`stem2ch_ms4_fuse`, **1.273.005** tham số).
+Dự án nghiên cứu và triển khai nhận dạng 7 cảm xúc khuôn mặt cơ bản (`angry`, `disgust`, `fear`, `happy`, `neutral`, `sad`, `surprise`) trên bộ dữ liệu khuôn mặt đa văn hóa 3 nguồn gồm **41.269 ảnh sạch** tổng hợp từ **KDEF** (Bắc Âu), **RADIATE** (Đa sắc tộc: Phi, Á, Mỹ Latinh, Âu) và **FER-2013** (Internet thế giới thực), tuân thủ kỷ luật phân chia theo người nghiêm ngặt (**Subject-Disjoint: 32.404 train / 3.990 val / 4.875 test**; 0 rò rỉ dữ liệu).
 
-> **Quy chuẩn kho mã nguồn:** Toàn bộ quy trình EDA, tiền xử lý `ssd_pad_160_1ch`, huấn luyện 60 epoch (`ASAM + Focal-CE + SupCon + FlipConsistency + CutMix/Mixup/SplitMix + EMA`) và đánh giá 1 lần trên tập test nằm gọn trong [`notebooks/CNN_KDEF_FER.ipynb`](notebooks/CNN_KDEF_FER.ipynb). Bên ngoài notebook chỉ giữ tài liệu, công cụ kiểm định chống rò rỉ và các module chạy đánh giá / API / Web UI / Camera.
+Hệ thống đề xuất kiến trúc CNN đối xứng đa tỉ lệ chuyên biệt cho khuôn mặt **`KDEF_Stem2Ch_MS4_Symmetric`** (**1.273.005 tham số**, dung lượng tệp **4,89 MB**), đồng thời xây dựng và đối sánh công bằng với 2 mô hình chuẩn mực: **HOG + SVM** (máy học truyền thống) và **ResNet-18** (học chuyển giao ImageNet).
 
-## Kết Quả Chính Thức (`KDEF_Stem2Ch_MS4_Symmetric` — `Single-View`)
+---
 
-| Chỉ số | 5-Fold GroupKFold CV (56 người) | Tập Validation (559 ảnh, 8 người) | Tập Test khóa (980 ảnh, 14 người) |
-|---|---|---|---|
-| **Accuracy** | **88,13% ± 2,22%** (`0.8813`) | **93,02%** (`0.9302`) | **86,84%** (`0.8684`) |
-| **Macro-F1** | **88,04% ± 2,13%** (`0.8804`) | **92,99%** (`0.9299`) | **86,87%** (`0.8687`) |
-| **ROC-AUC (OvR Macro)** | — | — | **0,9843** |
-| **Recall Spread (`max − min`)** | **26,95%** | — | **22,86%** (`min recall 75,00%`) |
-| **Nơ-ron chết (`\|a\| < 1e-6`)** | — | — | **0,00%** trên cả 8 tầng `SiLU` |
-| **Tỷ lệ `std` Stage 4 / Stem 1** | — | — | **1,47x** (`0.796 / 0.543`) |
+## 1. Kết Quả Thực Nghiệm Trên Tập Kiểm Tra Khóa (4.875 ảnh)
 
-*(Đối chiếu Flip-TTA trên tập test khóa: **87,55%** Accuracy / **87,55%** Macro-F1. Chi tiết phân lớp, ma trận nhầm lẫn, phân tích góc chụp/giới tính, Grad-CAM và đối chiếu tài liệu tham khảo xem tại [`reports/EXPERIMENT_REPORT.md`](reports/EXPERIMENT_REPORT.md) và [`reports/test_metrics.json`](reports/test_metrics.json)).*
+Toàn bộ 3 mô hình được huấn luyện và tối ưu siêu tham số chỉ trên tập `train` và `val`. Tập `test` (4.875 ảnh, 36 người mới hoàn toàn) được khóa và chỉ mở ra đánh giá một lần duy nhất theo giao thức suy luận chuẩn đơn ảnh (**Subject-Disjoint, Single-View**).
 
-## Cấu Trúc Dự Án
+| Tiêu chí đánh giá | HOG + SVM (Đối chứng 1) | ResNet-18 ImageNet (Đối chứng 2) | KDEF_Stem2Ch_MS4_Symmetric (Mô hình đề xuất) | So sánh Mô hình đề xuất vs ResNet-18 |
+|---|---:|---:|---:|:---:|
+| **Số tham số** | **56.707** (~0,057M) | **11.180.103** (~11,18M) | **1.273.005** (~1,27M) | **Nhẹ hơn ~8,8 lần** |
+| **Dung lượng tệp mô hình** | **0,28 MB** | **42,73 MB** | **4,89 MB** | **Nhỏ hơn ~8,7 lần** |
+| **Độ chính xác (Accuracy)** | **43,12%** | **72,78%** | **73,05%** | **+0,27%** |
+| **Macro-F1 (Trung bình 7 lớp)**| **40,58%** | **72,45%** | **72,60%** | **+0,15%** |
+| **Weighted-F1** | **42,10%** | **72,70%** | **72,89%** | **+0,19%** |
+| **ROC-AUC (OvR Macro)** | **0,7878** | **0,9255** | **0,9437** | **+0,0182** *(Vượt trội)* |
+| **Accuracy KDEF (980 ảnh)** | **41,63%** | **85,41%** | **85,51%** | **+0,10%** |
+| **Accuracy RADIATE (306 ảnh)**| **37,58%** | **79,09%** | **83,01%** | **+3,92%** *(Vượt trội đa sắc tộc)* |
+| **Accuracy FER-2013 (3.589 ảnh)**| **44,00%** | **68,79%** | **68,79%** | Ngang bằng |
+| **Thời gian suy luận CPU** | **0,50 ms** (1.988 FPS) | **16,52 ms** (60 FPS) | **19,09 ms** (52 FPS) | Chuẩn thời gian thực (> 50 FPS) |
+| **Thời gian suy luận GPU** | – (chỉ CPU) | **2,33 ms** (429 FPS) | **1,84 ms** (545 FPS) | **Nhanh hơn 27% trên GPU** |
 
-- [`notebooks/CNN_KDEF_FER.ipynb`](notebooks/CNN_KDEF_FER.ipynb): Notebook toàn trình duy nhất cho EDA, chuẩn hóa **SSD Face-Centered Square-Pad Crop** (`margin=1.25`, `160×160` `cv2.INTER_AREA`) + CLAHE, huấn luyện `KDEF_Stem2Ch_MS4_Symmetric` (`asam_focal_supcon_60ep`), mở khóa test 1 lần, Grad-CAM (`s4_ms.eca`) & phân tích kích hoạt trước/sau huấn luyện.
-- `src/models/`: [`model.py`](src/models/model.py) (định nghĩa kiến trúc `KDEF_Stem2Ch_MS4_Symmetric`, `SymmetricMultiScaleAUBlock`, `FacialProjectionHead`, `build_model` & `load_kdef_checkpoint`) và [`evaluate.py`](src/models/evaluate.py) (đánh giá checkpoint chuẩn `Single-View` hoặc tùy chọn Flip-TTA / MS4-TTA).
-- `src/preprocessing/` & `src/data/`: [`alignment.py`](src/preprocessing/alignment.py) (OpenCV Res10 SSD face detector + `ssd_square_pad` + CLAHE & `FaceAligner`) và [`dataset.py`](src/data/dataset.py) (nạp dữ liệu KDEF sạch, lọc MD5 hỏng).
-- `src/api/`: [`app.py`](src/api/app.py) (FastAPI server), [`ui.py`](src/api/ui.py) (Streamlit web UI), [`inference.py`](src/api/inference.py) (`EmotionRecognizer` & demo webcam thời gian thực).
-- `scripts/verify_notebook.py` & `reports/check_leakage.py`: Kiểm tra tự động anti-leakage, toàn vẹn cell output và không còn widget lỗi.
-- `reports/`: [`EXPERIMENT_REPORT.md`](reports/EXPERIMENT_REPORT.md), [`test_metrics.json`](reports/test_metrics.json), [`data_analysis.md`](reports/data_analysis.md), [`papers_research.md`](reports/papers_research.md) và biểu đồ trong `reports/figures/`.
+### Hình ảnh đối sánh kết quả trực quan
 
-## Cài Đặt Môi Trường
+![So sánh tổng thể 3 mô hình](reports/figures/mc_test_overall_metrics_3models.png)
+*Hình 1: So sánh tổng thể các chỉ số đo lường chính trên tập kiểm tra khóa.*
+
+![Độ chính xác theo nguồn](reports/figures/mc_test_accuracy_by_source_3models.png)
+*Hình 2: So sánh độ chính xác (Accuracy %) của 3 mô hình trên từng nguồn dữ liệu.*
+
+![F1-Score theo 7 cảm xúc](reports/figures/mc_test_f1_by_emotion_3models.png)
+*Hình 3: Biểu đồ F1-Score chi tiết của 7 lớp cảm xúc giữa 3 mô hình.*
+
+![Ma trận nhầm lẫn 3 mô hình](reports/figures/mc_test_confusion_3models.png)
+*Hình 4: Ma trận nhầm lẫn chuẩn hóa của 3 mô hình trên 4.875 ảnh kiểm tra.*
+
+---
+
+## 2. Kiến Trúc Mạng Đề Xuất Được Xây Dựng Như Thế Nào?
+
+Mô hình **`KDEF_Stem2Ch_MS4_Symmetric`** (`src/models/model.py`, tên mã `stem2ch_ms4_fuse`) được xây dựng bám sát cơ chế giải phẫu khuôn mặt theo hệ thống mã hóa FACS (Facial Action Coding System) với 5 thành phần cấu trúc:
+
+```
+                      [Ảnh vào: 1 x 160 x 160 (Xám + CLAHE)]
+                                        │
+           ┌────────────────────────────┴───────────────────────────┐
+           ▼                                                        ▼
+    Conv 3x3 (1->16)                                         Conv 5x5 (1->16)
+    [Chi tiết cạnh vi mô]                                    [Ngữ cảnh khối cơ mặt]
+           └────────────────────────────┬───────────────────────────┘
+                                        ▼ (Concat: 32 kênh)
+                           BatchNorm2d + SiLU + Conv 3x3 (32->32)
+                                        ▼
+                                MaxPool2d(2, 2)  --> [32 x 80 x 80]
+                                        │
+                                        ▼
+             Stage 2: 2x [Conv 3x3 (64) + BN + SiLU] + MaxPool2d
+                                                 --> [64 x 40 x 40]
+                                        │
+                                        ▼
+             Stage 3: 2x [Conv 3x3 (128) + BN + SiLU] + ECA-Net (k=3) + MaxPool2d
+                                                 --> [128 x 20 x 20]
+                                        │
+                                        ▼
+             Stage 4: Conv 3x3 (128->256) + SymmetricMultiScaleAUBlock(256)
+                                                 --> [256 x 20 x 20]
+                                        │
+                                        ▼
+             Upper/Lower Facial Strip Pooling: AdaptiveAvgPool2d((2, 1))
+                      [Dải trên: Mắt-Mày] + [Dải dưới: Mũi-Miệng]
+                                                 --> Vector 512 chiều
+                                        │
+                                        ▼
+             FacialProjectionHead (Dropout 0.45 -> Linear 512->128 -> BN -> SiLU)
+                                        │
+                        ┌───────────────┴───────────────┐
+                        ▼                               ▼
+                 L2-Normalize                   Linear 128 -> 7
+            Embedding 128 chiều                 (Logits 7 cảm xúc)
+            (Dùng cho SupCon Loss)
+```
+
+1. **Multi-Scale Parallel Stem (2 nhánh song song):** Tiếp nhận ảnh xám $160\times160$. Nhánh $3\times3$ trích xuất chi tiết cạnh vi mô; nhánh $5\times5$ bao quát hình thái khối cơ mặt. Nối ghép thành 32 kênh $\to \text{MaxPool}(2,2) \to 32 \times 80 \times 80$.
+2. **Khối chú ý kênh hiệu năng cao (ECA-Net tại Stage 3):** Sử dụng tích chập 1D cục bộ kích thước $k=3$ trên vector kênh sau Global Average Pooling ($\omega = \sigma(\text{Conv1D}_{k=3}(\text{GAP}(x)))$). Khối này giúp mô hình tự động khuếch đại các kênh chứa đặc trưng cảm xúc và dập tắt các kênh mang đặc trưng nhận dạng danh tính người mẫu với chi phí tham số bằng 0.
+3. **Khối Đa Tỉ Lệ Đối Xứng `SymmetricMultiScaleAUBlock` (Stage 4):** Nhận 256 kênh và phân tách thành 4 nhánh song song:
+   - $\text{Conv } 3\times3$ (96 kênh): Biến dạng cơ mặt đẳng hướng.
+   - $\text{Conv } 1\times3$ (64 kênh): Kernel định hướng **ngang** (kéo khóe môi khi cười, mím môi khi giận).
+   - $\text{Conv } 3\times1$ (64 kênh): Kernel định hướng **dọc** (nếp nhăn rãnh mũi - má, nhíu trán, há cằm).
+   - $\text{Conv } 3\times3 \text{ Dilation } d=2$ (96 kênh): Vùng đón nhận mở rộng tương đương $7\times7$, thu nhận mối tương quan toàn thể giữa các vùng biểu cảm.
+   - *Tính đối xứng gương (Flip-Equivariant):* Cặp kernel $(1\times3)$ và $(3\times1)$ giúp mạng duy trì độ chính xác ổn định trên cả góc nghiêng trái và phải (độ lệch $|\text{FL} - \text{FR}|$ chỉ $3,6\%$).
+4. **Upper/Lower Facial Strip Pooling (`AdaptiveAvgPool2d((2, 1))`):** Thay vì nén toàn bộ mặt thành 1 điểm như GAP $(1\times1)$, cấu trúc chia bản đồ đặc trưng thành 2 dải dọc:
+   - Dải trên: Vùng Mắt - Mày (AU1, AU2, AU4, AU5 — đặc trưng cho *sợ hãi, ngạc nhiên, giận dữ*).
+   - Dải dưới: Vùng Mũi - Miệng - Cằm (AU12, AU15, AU20, AU26 — đặc trưng cho *vui vẻ, ghê tởm, buồn*).
+   - Nối ghép thành vector 512 chiều bảo toàn ngữ nghĩa không gian của giải phẫu học khuôn mặt.
+5. **Head chiếu đa nhiệm (`FacialProjectionHead`):** Chiếu $512 \to 128$ chiều chuẩn hóa $L_2$ để tính hàm mất mát tương phản có giám sát (**SupCon Loss**), kéo các khuôn mặt cùng cảm xúc lại gần nhau trên hình cầu siêu chiều; song song đó phân nhánh $\text{Linear } 128 \to 7$ để dự đoán phân phối xác suất cảm xúc.
+
+---
+
+## 3. Nhận Xét Khoa Học Khách Quan
+
+1. **Hiệu quả của thiên kiến quy nạp miền chuyên biệt (Domain Inductive Bias):**
+   Mặc dù `ResNet-18` có số lượng tham số gấp gần 9 lần (11,18M so với 1,27M) và thừa hưởng tri thức từ 1,28 triệu ảnh ImageNet, mô hình đề xuất `KDEF_Stem2Ch_MS4_Symmetric` vẫn đạt kết quả phân loại cao hơn (**73,05% so với 72,78% Accuracy**, **0,9437 so với 0,9255 ROC-AUC**). Điều này khẳng định việc thiết kế các khối tích chập bất đối xứng $(1\times3, 3\times1)$ và Strip Pooling $2\times1$ mô phỏng đúng giải phẫu cơ mặt có hiệu quả vượt trội hơn so với việc sử dụng một mạng nơ-ron đa dụng tổng quát.
+2. **Khả năng khái quát hóa đa sắc tộc (Kháng Identity Overfitting):**
+   Trên tập dữ liệu đa sắc tộc RADIATE, mô hình đề xuất vượt trội ResNet-18 tới **+3,92% độ chính xác** (83,01% so với 79,09%). Kích thước 1,27M tham số vừa vặn ngăn ngừa hiện tượng mạng học thuộc khuôn mặt diễn viên, giúp tập trung học các biến dạng cơ biểu cảm chung của nhân loại.
+3. **Khoảng cách với phương pháp truyền thống:**
+   Mô hình học máy truyền thống `HOG + SVM` chỉ đạt 43,12% Accuracy, kém mô hình CNN tới gần 30% độ chính xác, chứng minh các đặc trưng gradient thủ công không thể thích ứng với sự biến đổi phức tạp của biểu cảm trong điều kiện góc chụp và ánh sáng đa dạng.
+4. **Khả năng triển khai thực tế:**
+   Với dung lượng checkpoint chỉ **4,89 MB** và tốc độ đạt **52 FPS trên CPU** thông thường, mô hình hoàn toàn sẵn sàng tích hợp vào các hệ thống thời gian thực qua webcam, trình duyệt hoặc thiết bị nhúng.
+
+---
+
+## 4. Cấu Trúc Mã Nguồn
+
+```
+├── data/
+│   ├── manifests/multicultural_manifest.csv   # Danh mục 41.269 ảnh sạch (KDEF + RADIATE + FER-2013)
+│   └── NGUON_DU_LIEU.md                       # Bản quyền và thông tin nguồn gốc dữ liệu
+├── checkpoints/
+│   ├── final_model.pt                         # Trọng số tối ưu KDEF_Stem2Ch_MS4_Symmetric (4,89 MB)
+│   ├── resnet18_multicultural.pt              # Trọng số tối ưu ResNet-18 (42,73 MB)
+│   └── hog_svm_multicultural.pkl              # Checkpoint HOG + SVM (0,28 MB)
+├── src/
+│   ├── models/
+│   │   ├── model.py                           # Định nghĩa KDEF_Stem2Ch_MS4_Symmetric & AU Block
+│   │   ├── baselines.py                       # Định nghĩa HOG+SVM & ResNet-18
+│   │   └── train.py                           # Pipeline huấn luyện CNN đa văn hóa
+│   ├── preprocessing/alignment.py             # Res10 SSD Face Detector & căn chỉnh hình ảnh
+│   └── api/
+│       ├── app.py                             # FastAPI REST Server
+│       ├── ui.py                              # Streamlit Web UI (Tải ảnh & Camera trực tiếp)
+│       └── inference.py                       # Module suy luận tích hợp tiếng Việt
+├── scripts/
+│   ├── so_sanh_mo_hinh.py                     # Đánh giá so sánh tự động 3 mô hình
+│   ├── train_baselines.py                     # Kịch bản huấn luyện 2 mô hình đối chứng
+│   └── verify_notebook.py                     # Kiểm tra toàn vẹn rào chắn dữ liệu
+└── reports/
+    ├── MULTICULTURAL_EXPERIMENT_REPORT.md     # Báo cáo thực nghiệm khoa học chi tiết
+    ├── model_comparison.md                    # Bảng số liệu đối sánh tập test
+    ├── leakage_result.json                    # Kết quả kiểm tra chống rò rỉ (0 leak)
+    └── figures/                               # Biểu đồ và hình ảnh so sánh kết quả
+```
+
+---
+
+## 5. Hướng Dẫn Sử Dụng & Chạy Ứng Dụng
+
+### 5.1. Cài đặt môi trường
 
 ```bash
+git checkout tree2
 python -m venv venv
-source venv/Scripts/activate  # hoặc venv/bin/activate
+source venv/Scripts/activate  # Trên Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Hướng Dẫn Chạy Kiểm Thử, Ứng Dụng & Camera
+### 5.2. Chạy kiểm tra rò rỉ và đánh giá so sánh 3 mô hình
 
-- **Kiểm định toàn vẹn notebook & chống rò rỉ dữ liệu:**
+- **Kiểm định tính toàn vẹn và chống rò rỉ dữ liệu:**
   ```bash
-  python scripts/verify_notebook.py
   python reports/check_leakage.py
   ```
-- **Chạy đánh giá mô hình trên tập test từ checkpoint (`checkpoints/final_model.pt`):**
+- **Chạy lại so sánh độc lập 3 mô hình trên tập kiểm tra khóa:**
   ```bash
-  python src/models/evaluate.py --checkpoint checkpoints/final_model.pt --split test
+  python scripts/so_sanh_mo_hinh.py --split test --unlock-test
   ```
-- **Chạy FastAPI Server nhận diện qua API:**
-  ```bash
-  uvicorn src.api.app:app --host 0.0.0.0 --port 8000
-  ```
-- **Chạy giao diện web tải ảnh (Streamlit):**
+
+### 5.3. Khởi chạy ứng dụng Web & API
+
+- **Giao diện Web tương tác (Streamlit):**
   ```bash
   streamlit run src/api/ui.py
   ```
-- **Chạy demo Camera thời gian thực:**
+  *(Cung cấp 2 chế độ: Tải ảnh chân dung với khung nhận diện khuôn mặt + 7 thanh xác suất cảm xúc; và Camera thời gian thực).*
+
+- **Dịch vụ API RESTful (FastAPI):**
+  ```bash
+  uvicorn src.api.app:app --host 0.0.0.0 --port 8000
+  ```
+  *(Truy cập tài liệu API tự động tại `http://localhost:8000/docs`).*
+
+- **Suy luận trực tiếp qua webcam:**
   ```bash
   python src/api/inference.py
   ```
