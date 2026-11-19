@@ -7,37 +7,48 @@
 
 ---
 
-## 1. Tóm Tắt Thực Nghiệm & Kết Quả Tổng Thể (Sau Tối Ưu Cả 3 Mô Hình)
+## 1. Tóm Tắt Thực Nghiệm & Kết Quả So Sánh Theo Chuẩn Bài Báo Tham Chiếu (`CNN` vs 6 Mô Hình Học Chuyển Giao)
 
 Thực nghiệm giải quyết bài toán nhận diện 7 cảm xúc khuôn mặt cơ bản (*giận dữ, ghê tởm, sợ hãi, vui vẻ, trung tính, buồn, ngạc nhiên*) trên bộ dữ liệu khuôn mặt đa văn hóa gồm **41.269 ảnh** sạch tổng hợp từ 3 nguồn:
 1. **KDEF** (70 người mẫu Thụy Điển - Bắc Âu, chụp studio chuẩn hóa 5 góc quay).
 2. **RADIATE** (109 người mẫu đa sắc tộc: gốc Phi, gốc Á, gốc Mỹ Latinh, gốc Âu chụp trong phòng studio).
 3. **FER-2013** (34.878 ảnh thực tế lấy từ Internet của nhiều quốc gia, kích thước 48×48).
 
-Nghiên cứu tiến hành xây dựng, tối ưu tuần tự bằng script ngoài trên tập `train`/`val` và so sánh thực nghiệm công bằng trên cùng tập `test` khóa giữa 3 kiến trúc:
-- **Mô hình đề xuất `KDEF_Stem2Ch_MS4_Symmetric` (`v2_res`)**: Kiến trúc CNN đối xứng đa tỉ lệ nâng cấp (bổ sung skip-connection Stage 2/3, Avg+Max Strip Pooling `1024 -> 128`, **1.349.165 tham số**, dung lượng **5,19 MB**).
-- **Mô hình đối chứng 1 `HOG + SVM`** (*Dalal & Triggs, 2005; Cortes & Vapnik, 1995*): Trích xuất đặc trưng hướng gradient `160x160` ô `16` (2.916 chiều) kết hợp phân loại `LinearSVC` ($C = 0,0002$, hiệu chỉnh `class_weight`) và hiệu chuẩn xác suất Platt (20.419 tham số, 0,10 MB).
-- **Mô hình đối chứng 2 `ResNet-18`** (*He et al., CVPR 2016*): Mạng sâu phần dư nạp sẵn trọng số tiền huấn luyện `IMAGENET1K_V1` (1,28 triệu ảnh ImageNet), tinh chỉnh toàn mạng với differential learning rate + cosine warmup + class weighting tối ưu trên `val` (11.180.103 tham số, 42,73 MB).
+Nghiên cứu tiến hành xây dựng, huấn luyện theo đúng quy trình của bài báo tham chiếu (*"Enhancing Esophageal Cancer Detection Using Transfer Learning Techniques"* — Huynh, Nguyen-Cao et al., TDMU) trên tập `train` (32.404 ảnh) / `val` (3.990 ảnh) và so sánh thực nghiệm công bằng trên cùng tập `test` khóa (4.875 ảnh) giữa:
+- **Mô hình đề xuất `CNN` (`KDEF_Stem2Ch_MS4_Symmetric`, `v2_res`)**: Kiến trúc CNN đối xứng đa tỉ lệ chuyên biệt cho khuôn mặt (skip-connection Stage 2/3, ECA-Net, SymmetricMultiScaleAUBlock, Avg+Max Strip Pooling `1024 -> 128 -> 7`, **1.349.165 tham số**, dung lượng **5,19 MB**).
+- **6 Mô hình Học chuyển giao tiền huấn luyện trên ImageNet-1K (`VGG16`, `VGG19`, `InceptionV3`, `DenseNet201`, `ResNet50`, `EfficientNetB4`)**: Đóng băng các tầng trích xuất đặc trưng đầu (*frozen initial layers*), tinh chỉnh các tầng sâu phía sau (*fine-tuned later layers*) kết hợp đầu phân loại tùy chỉnh `Global Average Pooling → FC(128) → FC(64) → Dropout(0.7) → FC(7, Softmax)`, huấn luyện với tốc độ học `lr = 0.0001` (`1e-4`), tăng cường dữ liệu (*Rotation, Distortion, Flipping*) trong **20 epochs** (`scripts/train_transfer_learning.py`).
+- **2 Mô hình đối chứng bổ sung**: `HOG + SVM` (20.419 tham số, 0,10 MB) và `ResNet-18` (11.180.103 tham số, 42,73 MB).
 
-### Bảng 1: Kết quả kiểm tra trên 4.875 ảnh độc lập (chưa từng xuất hiện khi huấn luyện)
+![Sơ đồ kiến trúc tổng thể](figures/paper_fig1_proposed_architecture.png)
+*Fig. 1: Sơ đồ kiến trúc tổng thể của nghiên cứu (Proposed architecture of the study).*
 
-| Tiêu chí đánh giá | HOG + SVM (Đối chứng 1) | ResNet-18 ImageNet (Đối chứng 2) | KDEF_Stem2Ch_MS4_Symmetric (Mô hình đề xuất) | So sánh Mô hình đề xuất vs ResNet-18 |
-|---|---:|---:|---:|:---:|
-| **Số tham số** | **20.419** | **11.180.103** | **1.349.165** | **Nhẹ hơn ~8,3 lần** |
-| **Dung lượng checkpoint** | **0,10 MB** | **42,73 MB** | **5,19 MB** | **Nhỏ hơn ~8,2 lần** |
-| **Phép nhân-cộng / ảnh (MACs)** | **< 0,001 tỉ** | **0,925 tỉ** | **1,351 tỉ** | Phù hợp thiết bị biên |
-| **Thời gian suy luận CPU (1 ảnh)** | **0,43 ms** (2.302 FPS) | **13,89 ms** (72 FPS) | **17,32 ms** (58 FPS) | Đạt chuẩn thời gian thực (> 50 FPS) |
-| **Thời gian suy luận GPU RTX 4060** | – (chỉ CPU) | **1,99 ms** (504 FPS) | **2,15 ms** (465 FPS) | Cạnh tranh thời gian thực |
-| **Accuracy (Toàn bộ 4.875 ảnh)** | **44,57%** (2.173/4.875) | **74,28%** (3.621/4.875) | **73,39%** (3.578/4.875) | Chênh 0,89% với ~1/8,3 tham số |
-| **Macro-F1 (Trung bình 7 lớp)** | **41,59%** | **73,81%** | **72,82%** | Gần tương đương (0,7282 vs 0,7381) |
-| **Weighted-F1** | **42,84%** | **74,08%** | **73,33%** | Chênh 0,75% |
-| **ROC-AUC (OvR macro)** | **0,7942** | **0,9492** | **0,9450** | Gần tương đương (0,9450 vs 0,9492) |
-| **Accuracy KDEF (980 ảnh)** | **41,12%** (F1 38,19%) | **87,35%** (F1 87,44%) | **86,53%** (F1 86,56%) | Ngang tầm studio chuẩn |
-| **Accuracy RADIATE (306 ảnh)** | **40,85%** (F1 37,08%) | **84,31%** (F1 83,19%) | **84,97%** (F1 84,37%) | **CNN vượt +0,66% đa sắc tộc** |
-| **Accuracy FER-2013 (3.589 ảnh)** | **45,83%** (F1 38,08%) | **69,85%** (F1 67,92%) | **68,82%** (F1 66,30%) | ResNet-18 hưởng lợi từ ImageNet |
+### Biểu đồ Hội tụ Accuracy & Loss qua 20 Epochs (Theo Fig. 2 & Fig. 3 bài báo tham chiếu)
 
-![So sánh tổng thể 3 mô hình](figures/mc_test_overall_metrics_3models.png)
-*Hình 1: Biểu đồ so sánh các chỉ số tổng thể (Accuracy, Macro-F1, Weighted-F1, ROC-AUC) của 3 mô hình sau tối ưu trên tập kiểm tra khóa.*
+![Biểu đồ Accuracy 20 epochs](figures/paper_fig2_accuracy_curves.png)
+*Fig. 2: Training (a) and Validation (b) Accuracy of Models qua 20 epochs (`VGG16`, `VGG19`, `DenseNet201`, `InceptionV3`, `ResNet50`, `EfficientNetB4`, và `CNN`).*
+
+![Biểu đồ Loss 20 epochs](figures/paper_fig3_loss_curves.png)
+*Fig. 3: Training (a) and Validation (b) Loss of Models qua 20 epochs.*
+
+### Table 1: Bảng so sánh hiệu năng 6 mô hình Pre-trained Transfer Learning và mô hình đề xuất `CNN` trên 4.875 ảnh Test độc lập
+
+| Model | Accuracy | Precision (Macro / Weighted) | Recall (Macro / Weighted) | F1-Score (Macro / Weighted) | Specificity | ROC-AUC | Số tham số | Tệp (MB) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `EfficientNetB4` | 55,34% | 53,15% / 55,20% | 53,66% / 55,34% | 53,09% / 55,00% | 92,46% | 0,8683 | 17.787.215 | 68,61 MB |
+| `InceptionV3` | 57,50% | 56,14% / 57,73% | 56,40% / 57,50% | 56,21% / 57,56% | 92,83% | 0,8529 | 22.056.935 | 84,49 MB |
+| `VGG19` | 64,47% | 64,15% / 64,70% | 63,84% / 64,47% | 63,96% / 64,56% | 94,00% | 0,8917 | 20.099.143 | 76,70 MB |
+| `DenseNet201` | 64,51% | 63,97% / 64,78% | 63,65% / 64,51% | 63,78% / 64,61% | 94,01% | 0,8907 | 18.347.911 | 71,32 MB |
+| `VGG16` | 66,07% | 65,52% / 66,15% | 65,42% / 66,07% | 65,44% / 66,08% | 94,28% | 0,9047 | 14.789.447 | 56,44 MB |
+| `ResNet50` | 67,02% | 65,97% / 66,93% | 66,27% / 67,02% | 66,07% / 66,93% | 94,44% | 0,9098 | 23.779.399 | 91,03 MB |
+| **`CNN` (Đề xuất)** | **73,39%** | **73,81%** / **73,66%** | **72,30%** / **73,39%** | **72,82%** / **73,33%** | **95,50%** | **0,9450** | **1.349.165** | **5,19 MB** |
+| *(Đối chứng bổ sung)* `HOG + SVM` | 44,57% | 41,14% / 43,19% | 43,65% / 44,57% | 41,59% / 42,84% | 90,59% | 0,7942 | 20.419 | 0,10 MB |
+| *(Đối chứng bổ sung)* `ResNet-18` | 74,28% | 73,77% / 74,07% | 74,08% / 74,28% | 73,81% / 74,08% | 95,66% | 0,9492 | 11.180.103 | 42,73 MB |
+
+![Biểu đồ Table 1](figures/paper_table1_metrics_bar.png)
+*Biểu đồ Table 1: Biểu đồ so sánh các chỉ số Accuracy, Precision, Recall và F1-Score của 6 mô hình Transfer Learning và mô hình đề xuất `CNN` trên tập kiểm tra khóa.*
+
+![Ma trận nhầm lẫn các mô hình](figures/paper_fig4_confusion_matrices.png)
+*Fig. 4: Ma trận nhầm lẫn (Confusion Matrices) của các mô hình: (a) EfficientNetB4, (b) ResNet50, (c) VGG19, (d) VGG16, (e) InceptionV3, (f) DenseNet201, và (g) CNN trên 4.875 ảnh kiểm tra.*
 
 ---
 

@@ -1,117 +1,107 @@
-# So sánh 3 mô hình trên tập `val` khóa của bộ dữ liệu đa văn hóa 3 nguồn
+# So sánh Mô hình CNN và 6 Mô hình Học Chuyển Giao (Transfer Learning) trên tập `val` khóa
 
-Sinh tự động bởi `python scripts/so_sanh_mo_hinh.py --split val` — cùng 3,990 ảnh, cùng tiền xử lý `ssd_pad_1ch` (SSD square-pad 1,25 + CLAHE), cùng hàm tính độ đo `compute_multicultural_metrics`. Đoán ngẫu nhiên = 14,29%.
+Sinh tự động bởi `python scripts/so_sanh_mo_hinh.py --split val` — thực hiện theo đúng quy trình và hệ thống biểu đồ của bài báo tham chiếu *"Enhancing Esophageal Cancer Detection Using Transfer Learning Techniques"* (Huynh, Nguyen-Cao et al., TDMU), đánh giá trên cùng **3,990 ảnh** của bộ dữ liệu khuôn mặt đa văn hóa 3 nguồn (`KDEF + RADIATE + FER-2013`), cùng hàm tính độ đo `compute_multicultural_metrics`.
 
-Kiểm tra toàn vẹn: y_true của 3 mô hình trùng khớp = **True**, thứ tự ảnh theo manifest = **True**.
+Kiểm tra toàn vẹn: `y_true` của toàn bộ 9 mô hình trùng khớp = **True**, thứ tự ảnh theo manifest = **True**.
 
-## 1. Kết quả chung
+## 1. Kiến trúc đề xuất & Quy trình Học chuyển giao (Theo Fig. 1 bài báo tham chiếu)
 
-| Mô hình | Accuracy | Macro-F1 | Weighted-F1 | ROC-AUC (OvR macro) | Macro-Precision | Macro-Recall | Recall spread | Ảnh đúng |
+- **6 Mô hình tiền huấn luyện (Pre-trained Models trên ImageNet-1K):** `VGG16`, `VGG19`, `InceptionV3`, `DenseNet201`, `ResNet50`, `EfficientNetB4`.
+- **Cấu trúc tinh chỉnh tầng phân loại (*Customize the Layer of Pre-trained Model*, Mục 3.2 bài báo):**
+  - Đóng băng các tầng trích xuất đặc trưng đầu (*frozen initial layers*) để giữ lại đặc trưng cạnh, kết cấu, hình thái cơ bản.
+  - Tinh chỉnh các tầng sâu phía sau (*fine-tuned later layers*) kết hợp đầu phân loại tùy chỉnh: `Global Average Pooling` → `FC(128)` → `FC(64)` → `Dropout(0.7)` → `FC(7, Softmax)`.
+  - Huấn luyện với tốc độ học `lr = 0.0001` (`1e-4`), tăng cường dữ liệu (*Rotation, Distortion, Flipping*) để xử lý mất cân bằng lớp trong **20 epochs**.
+- **Mô hình đề xuất của nhóm (`CNN` — `KDEF_Stem2Ch_MS4_Symmetric`):** Kiến trúc CNN đa tỉ lệ đối xứng chuyên biệt cho nhận dạng cảm xúc khuôn mặt (**1.349.165 tham số**, dung lượng **5,19 MB**).
+
+![Kiến trúc tổng thể hệ thống](figures/paper_fig1_proposed_architecture.png)
+
+*Fig. 1: Sơ đồ kiến trúc tổng thể của nghiên cứu (Proposed architecture of the study).* 
+
+## 2. Biểu đồ Hội tụ Accuracy & Loss qua 20 Epochs (Theo Fig. 2 & Fig. 3 bài báo tham chiếu)
+
+![Biểu đồ Accuracy](figures/paper_fig2_accuracy_curves.png)
+
+*Fig. 2: Training (a) and Validation (b) Accuracy of Models (VGG16, VGG19, DenseNet201, InceptionV3, ResNet50, EfficientNetB4, và CNN).* 
+
+![Biểu đồ Loss](figures/paper_fig3_loss_curves.png)
+
+*Fig. 3: Training (a) and Validation (b) Loss of Models qua 20 epochs.* 
+
+## 3. Bảng So Sánh Hiệu Năng (Table 1 — Performance Comparison of Pre-trained Models & CNN)
+
+| Model | Accuracy | Precision (Macro / Weighted) | Recall (Macro / Weighted) | F1-Score (Macro / Weighted) | Specificity | ROC-AUC | Số tham số | Tệp (MB) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| KDEF_Stem2Ch_MS4_Symmetric (CNN chính) | 71.63% | 71.05% | 71.49% | 0.9330 | 71.57% | 70.85% | 36.15% | 2,858/3,990 |
-| HOG + SVM (LinearSVC) | 45.21% | 42.10% | 43.72% | 0.7891 | 41.48% | 44.90% | 53.16% | 1,804/3,990 |
-| ResNet-18 (IMAGENET1K_V1) | 73.01% | 72.84% | 72.85% | 0.9398 | 73.06% | 72.91% | 32.68% | 2,913/3,990 |
+| EfficientNetB4 | 54.71% | 52.07% / 54.83% | 53.39% / 54.71% | 52.26% / 54.46% | 92.28% | 0.8556 | 17,787,215 | 68.61 MB |
+| InceptionV3 | 55.56% | 52.85% / 55.46% | 52.63% / 55.56% | 52.70% / 55.48% | 92.41% | 0.8330 | 22,056,935 | 84.49 MB |
+| VGG19 | 61.60% | 60.49% / 61.77% | 60.15% / 61.60% | 60.29% / 61.66% | 93.46% | 0.8776 | 20,099,143 | 76.70 MB |
+| DenseNet201 | 62.21% | 61.18% / 62.46% | 61.25% / 62.21% | 61.19% / 62.30% | 93.56% | 0.8779 | 18,347,911 | 71.32 MB |
+| VGG16 | 64.26% | 62.58% / 64.27% | 63.70% / 64.26% | 63.03% / 64.23% | 93.91% | 0.8921 | 14,789,447 | 56.44 MB |
+| ResNet50 | 65.86% | 65.03% / 65.94% | 65.20% / 65.86% | 65.09% / 65.88% | 94.18% | 0.9008 | 23,779,399 | 91.03 MB |
+| **CNN** | **71.63%** | 71.57% / 71.64% | 70.85% / 71.63% | **71.05%** / 71.49% | 95.16% | 0.9330 | 1,349,165 | 5.19 MB |
 
-## 2. Theo từng nguồn dữ liệu
+![Biểu đồ Table 1](figures/paper_table1_metrics_bar_val.png)
 
-| Mô hình | Nguồn | Số ảnh | Accuracy | Macro-F1 | Weighted-F1 | ROC-AUC |
-|---|---|---:|---:|---:|---:|---:|
-| KDEF_Stem2Ch_MS4_Symmetric (CNN chính) | KDEF | 559 | 90.70% | 90.65% | 90.66% | 0.9953 |
-| KDEF_Stem2Ch_MS4_Symmetric (CNN chính) | RADIATE | 148 | 85.14% | 83.93% | 84.96% | 0.9816 |
-| KDEF_Stem2Ch_MS4_Symmetric (CNN chính) | FER-2013 | 3,283 | 67.77% | 63.29% | 67.52% | 0.9108 |
-| HOG + SVM (LinearSVC) | KDEF | 559 | 41.86% | 38.00% | 37.98% | 0.7850 |
-| HOG + SVM (LinearSVC) | RADIATE | 148 | 42.57% | 41.69% | 42.29% | 0.7969 |
-| HOG + SVM (LinearSVC) | FER-2013 | 3,283 | 45.90% | 38.82% | 44.46% | 0.7743 |
-| ResNet-18 (IMAGENET1K_V1) | KDEF | 559 | 91.59% | 91.57% | 91.57% | 0.9951 |
-| ResNet-18 (IMAGENET1K_V1) | RADIATE | 148 | 85.14% | 83.90% | 84.82% | 0.9820 |
-| ResNet-18 (IMAGENET1K_V1) | FER-2013 | 3,283 | 69.30% | 66.56% | 69.09% | 0.9203 |
+*Biểu đồ Table 1: Đối sánh trực quan Accuracy, Precision, Recall và F1-Score giữa 6 mô hình Transfer Learning và mô hình CNN.* 
 
-## 3. Theo nhóm người (nguồn gốc)
 
-| Nhóm | Số ảnh | KDEF_Stem2Ch_MS4_Symmetric (CNN chính) Acc / F1 | HOG + SVM (LinearSVC) Acc / F1 | ResNet-18 (IMAGENET1K_V1) Acc / F1 |
-|---|---:|---:|---:|---:|
-| KDEF – Bắc Âu (Thụy Điển) | 559 | 90.7% / 0.907 | 41.9% / 0.380 | 91.6% / 0.916 |
-| RADIATE – gốc Phi | 54 | 79.6% / 0.776 | 37.0% / 0.330 | 87.0% / 0.847 |
-| RADIATE – gốc Á | 27 | 81.5% / 0.819 | 44.4% / 0.446 | 77.8% / 0.776 |
-| RADIATE – gốc Mỹ Latinh | 26 | 84.6% / 0.834 | 50.0% / 0.520 | 76.9% / 0.760 |
-| RADIATE – gốc Âu | 41 | 95.1% / 0.952 | 43.9% / 0.429 | 92.7% / 0.932 |
-| FER-2013 – Internet | 3,283 | 67.8% / 0.633 | 45.9% / 0.388 | 69.3% / 0.666 |
+## 4. Ma Trận Nhầm Lẫn Của Các Mô Hình (Fig. 4 — Confusion Matrices)
 
-## 4. Theo giới tính (KDEF + RADIATE, có định danh)
+![Ma trận nhầm lẫn các mô hình](figures/mc_val_confusion_3models.png)
 
-| Giới tính | Số ảnh | KDEF_Stem2Ch_MS4_Symmetric (CNN chính) Acc / F1 | HOG + SVM (LinearSVC) Acc / F1 | ResNet-18 (IMAGENET1K_V1) Acc / F1 |
-|---|---:|---:|---:|---:|
-| Nữ | 304 | 83.9% / 0.836 | 39.8% / 0.377 | 87.8% / 0.878 |
-| Nam | 403 | 93.8% / 0.937 | 43.7% / 0.405 | 92.1% / 0.920 |
+*Fig. 4: Confusion matrices of pre-trained models and proposed CNN.* 
 
-## 5. Theo góc chụp (phần KDEF, 5 góc)
 
-| Góc | KDEF_Stem2Ch_MS4_Symmetric (CNN chính) | HOG + SVM (LinearSVC) | ResNet-18 (IMAGENET1K_V1) |
+## 5. Bảng Tổng Hợp Toàn Bộ Mô Hình (Bao gồm cả Baselines bổ sung)
+
+| Mô hình | Accuracy | Macro-F1 | Weighted-F1 | Macro-Precision | Macro-Recall | Specificity | ROC-AUC (OvR) | Ảnh đúng |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| CNN (KDEF_Stem2Ch_MS4_Symmetric) | 71.63% | 71.05% | 71.49% | 71.57% | 70.85% | 95.16% | 0.9330 | 2,858/3,990 |
+| VGG16 (ImageNet Transfer Learning) | 64.26% | 63.03% | 64.23% | 62.58% | 63.70% | 93.91% | 0.8921 | 2,564/3,990 |
+| VGG19 (ImageNet Transfer Learning) | 61.60% | 60.29% | 61.66% | 60.49% | 60.15% | 93.46% | 0.8776 | 2,458/3,990 |
+| InceptionV3 (ImageNet Transfer Learning) | 55.56% | 52.70% | 55.48% | 52.85% | 52.63% | 92.41% | 0.8330 | 2,217/3,990 |
+| DenseNet201 (ImageNet Transfer Learning) | 62.21% | 61.19% | 62.30% | 61.18% | 61.25% | 93.56% | 0.8779 | 2,482/3,990 |
+| ResNet50 (ImageNet Transfer Learning) | 65.86% | 65.09% | 65.88% | 65.03% | 65.20% | 94.18% | 0.9008 | 2,628/3,990 |
+| EfficientNetB4 (ImageNet Transfer Learning) | 54.71% | 52.26% | 54.46% | 52.07% | 53.39% | 92.28% | 0.8556 | 2,183/3,990 |
+| HOG + SVM (LinearSVC) | 45.21% | 42.10% | 43.72% | 41.48% | 44.90% | 90.63% | 0.7891 | 1,804/3,990 |
+| ResNet-18 (IMAGENET1K_V1) | 73.01% | 72.84% | 72.85% | 73.06% | 72.91% | 95.39% | 0.9398 | 2,913/3,990 |
+
+## 6. Theo từng nguồn dữ liệu (KDEF, RADIATE, FER-2013)
+
+| Mô hình | KDEF Acc / F1 (559 ảnh) | RADIATE Acc / F1 (148 ảnh) | FER-2013 Acc / F1 (3,283 ảnh) |
 |---|---:|---:|---:|
-| FL (nghiêng hẳn trái) | 90.1% | 27.9% | 86.5% |
-| HL (nửa trái) | 89.3% | 42.9% | 94.6% |
-| S (chính diện) | 93.8% | 67.9% | 97.3% |
-| HR (nửa phải) | 92.9% | 41.1% | 93.8% |
-| FR (nghiêng hẳn phải) | 87.5% | 29.5% | 85.7% |
-| \|FL − FR\| | 2.6% | 1.5% | 0.8% |
+| CNN | 90.70% / 90.65% | 85.14% / 83.93% | 67.77% / 63.29% |
+| VGG16 | 76.92% / 77.17% | 70.95% / 70.03% | 61.80% / 57.43% |
+| VGG19 | 68.87% / 69.35% | 72.97% / 70.97% | 59.85% / 56.10% |
+| InceptionV3 | 53.49% / 53.46% | 58.11% / 58.64% | 55.80% / 51.06% |
+| DenseNet201 | 68.87% / 69.22% | 72.30% / 69.61% | 60.62% / 57.63% |
+| ResNet50 | 76.74% / 77.01% | 74.32% / 73.39% | 63.63% / 60.17% |
+| EfficientNetB4 | 53.31% / 53.16% | 56.76% / 56.48% | 54.86% / 49.54% |
+| HOG + SVM | 41.86% / 38.00% | 42.57% / 41.69% | 45.90% / 38.82% |
+| ResNet-18 | 91.59% / 91.57% | 85.14% / 83.90% | 69.30% / 66.56% |
 
-## 6. Theo từng cảm xúc
+## 7. Theo từng lớp cảm xúc (F1-Score 7 cảm xúc)
 
-### 6.1. F1 từng cảm xúc theo mô hình
+| Cảm xúc | Số ảnh | EfficientNetB4 | InceptionV3 | VGG19 | DenseNet201 | VGG16 | ResNet50 | CNN |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| angry | 538 | 0.4505 | 0.4489 | 0.5373 | 0.5463 | 0.5669 | 0.5927 | 0.6624 |
+| disgust | 141 | 0.4419 | 0.4211 | 0.5993 | 0.6250 | 0.6159 | 0.6804 | 0.7704 |
+| fear | 550 | 0.3742 | 0.4115 | 0.4636 | 0.4832 | 0.5070 | 0.5099 | 0.5598 |
+| happy | 972 | 0.7490 | 0.7628 | 0.8185 | 0.8173 | 0.8256 | 0.8447 | 0.8788 |
+| neutral | 685 | 0.5003 | 0.5251 | 0.5731 | 0.5785 | 0.6054 | 0.6086 | 0.6888 |
+| sad | 724 | 0.4587 | 0.4639 | 0.5130 | 0.5200 | 0.5353 | 0.5636 | 0.6291 |
+| surprise | 380 | 0.6834 | 0.6560 | 0.7158 | 0.7130 | 0.7560 | 0.7560 | 0.7846 |
+| **Macro-F1** | | **0.5226** | **0.5270** | **0.6029** | **0.6119** | **0.6303** | **0.6509** | **0.7105** |
 
-| Cảm xúc | Số ảnh | KDEF_Stem2Ch_MS4_Symmetric (CNN chính) | HOG + SVM (LinearSVC) | ResNet-18 (IMAGENET1K_V1) |
-|---|---:|---:|---:|---:|
-| angry | 538 | 0.6624 | 0.3576 | 0.6541 |
-| disgust | 141 | 0.7704 | 0.4414 | 0.8114 |
-| fear | 550 | 0.5598 | 0.2434 | 0.6123 |
-| happy | 972 | 0.8788 | 0.6496 | 0.8841 |
-| neutral | 685 | 0.6888 | 0.4299 | 0.6879 |
-| sad | 724 | 0.6291 | 0.3382 | 0.6470 |
-| surprise | 380 | 0.7846 | 0.4869 | 0.8020 |
-| **Macro-F1** | | **0.7105** | **0.4210** | **0.7284** |
+## 8. Quy mô tham số và tốc độ suy luận
 
-### 6.2. KDEF_Stem2Ch_MS4_Symmetric (CNN chính): Precision / Recall / F1 / AUC từng cảm xúc
-
-| Cảm xúc | Precision | Recall | F1 | AUC | Recall KDEF | Recall RADIATE | Recall FER-2013 |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| angry | 0.6575 | 0.6673 | 0.6624 | 0.9170 | 0.8000 | 0.8182 | 0.6353 |
-| disgust | 0.8062 | 0.7376 | 0.7704 | 0.9853 | 0.8608 | 0.9091 | 0.4000 |
-| fear | 0.6189 | 0.5109 | 0.5598 | 0.8625 | 0.9000 | 0.7727 | 0.4286 |
-| happy | 0.8852 | 0.8724 | 0.8788 | 0.9759 | 0.9875 | 0.9667 | 0.8585 |
-| neutral | 0.6430 | 0.7416 | 0.6888 | 0.9230 | 0.9750 | 0.9545 | 0.7015 |
-| sad | 0.6339 | 0.6243 | 0.6291 | 0.8951 | 0.9250 | 0.6500 | 0.5849 |
-| surprise | 0.7650 | 0.8053 | 0.7846 | 0.9718 | 0.9000 | 0.8000 | 0.7793 |
-
-### 6.3. HOG + SVM (LinearSVC): Precision / Recall / F1 / AUC từng cảm xúc
-
-| Cảm xúc | Precision | Recall | F1 | AUC | Recall KDEF | Recall RADIATE | Recall FER-2013 |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| angry | 0.3747 | 0.3420 | 0.3576 | 0.7484 | 0.3750 | 0.3636 | 0.3349 |
-| disgust | 0.3584 | 0.5745 | 0.4414 | 0.9042 | 0.7975 | 0.5455 | 0.1500 |
-| fear | 0.3542 | 0.1855 | 0.2434 | 0.6876 | 0.0125 | 0.3636 | 0.2076 |
-| happy | 0.5937 | 0.7171 | 0.6496 | 0.8633 | 0.5500 | 0.5333 | 0.7390 |
-| neutral | 0.4277 | 0.4321 | 0.4299 | 0.7610 | 0.4000 | 0.4091 | 0.4374 |
-| sad | 0.3791 | 0.3052 | 0.3382 | 0.7004 | 0.2000 | 0.2500 | 0.3205 |
-| surprise | 0.4160 | 0.5868 | 0.4869 | 0.8588 | 0.6000 | 0.5000 | 0.5862 |
-
-### 6.4. ResNet-18 (IMAGENET1K_V1): Precision / Recall / F1 / AUC từng cảm xúc
-
-| Cảm xúc | Precision | Recall | F1 | AUC | Recall KDEF | Recall RADIATE | Recall FER-2013 |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| angry | 0.6635 | 0.6450 | 0.6541 | 0.9205 | 0.8250 | 0.6818 | 0.6101 |
-| disgust | 0.8143 | 0.8085 | 0.8114 | 0.9866 | 0.9241 | 0.8636 | 0.5500 |
-| fear | 0.6754 | 0.5600 | 0.6123 | 0.8900 | 0.9125 | 0.7727 | 0.4866 |
-| happy | 0.8814 | 0.8868 | 0.8841 | 0.9825 | 0.9875 | 1.0000 | 0.8735 |
-| neutral | 0.6426 | 0.7401 | 0.6879 | 0.9258 | 0.9000 | 1.0000 | 0.7084 |
-| sad | 0.6576 | 0.6367 | 0.6470 | 0.8988 | 0.9000 | 0.8000 | 0.5978 |
-| surprise | 0.7792 | 0.8263 | 0.8020 | 0.9744 | 0.9625 | 0.7000 | 0.7931 |
-
-## 7. Quy mô và tốc độ dự đoán
-
-Độ trễ đo theo lô 1 ảnh, tính cả bước chuyển uint8 → tensor → chuẩn hóa → suy luận → softmax (không tính dò mặt), 300 lần sau 20 lần khởi động, fp32.
-
-| Mô hình | Số tham số | Phép nhân-cộng / ảnh | Tệp mô hình | CPU ms/ảnh (FPS) | GPU ms/ảnh (FPS) | Ảnh vào |
+| Mô hình | Số tham số | Phép nhân-cộng / ảnh | Tệp mô hình | CPU ms/ảnh (FPS) | GPU ms/ảnh (FPS) | Cấu hình đầu vào & Head |
 |---|---:|---:|---:|---:|---:|---|
-| KDEF_Stem2Ch_MS4_Symmetric (CNN chính) | 1,349,165 | 1.351 tỉ | 5.19 MB | 17.16 (58) | 2.15 (466) | xám 160x160, CLAHE=True, mean=0.517243, std=0.264053 |
-| HOG + SVM (LinearSVC) | 20,419 | 0.000 tỉ | 0.10 MB | 0.48 (2091) | – (chỉ CPU) | HOG 160x160, ô 16, 9 hướng -> 2916 chiều, C=0.0002, class_weight={0: 0.9373, 1: 1.5803, 2: 0.9297, 3: 0.7717, 4: 0.8718, 5: 0.8796, 6: 1.0296} |
-| ResNet-18 (IMAGENET1K_V1) | 11,180,103 | 0.925 tỉ | 42.73 MB | 13.58 (74) | 2.87 (348) | xám 160x160 lặp 3 kênh, chuẩn hóa ImageNet |
+| CNN | 1,349,165 | 1.351 tỉ | 5.19 MB | 14.93 (67) | 2.01 (498) | xám 160x160, CLAHE=True, mean=0.517243, std=0.264053 |
+| VGG16 | 14,789,447 | 5.011 tỉ | 56.44 MB | 34.84 (29) | 3.98 (251) | xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7 |
+| VGG19 | 20,099,143 | 6.370 tỉ | 76.70 MB | 42.96 (23) | 4.19 (238) | xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7 |
+| InceptionV3 | 22,056,935 | 0.731 tỉ | 84.49 MB | 27.22 (37) | 10.40 (96) | xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7 |
+| DenseNet201 | 18,347,911 | 1.401 tỉ | 71.32 MB | 65.64 (15) | 21.61 (46) | xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7 |
+| ResNet50 | 23,779,399 | 1.335 tỉ | 91.03 MB | 25.64 (39) | 5.46 (183) | xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7 |
+| EfficientNetB4 | 17,787,215 | 0.493 tỉ | 68.61 MB | 44.33 (23) | 13.21 (76) | xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7 |
+| HOG + SVM | 20,419 | 0.000 tỉ | 0.10 MB | 0.41 (2428) | – (chỉ CPU) | HOG 160x160, ô 16, 9 hướng -> 2916 chiều, C=0.0002 |
+| ResNet-18 | 11,180,103 | 0.925 tỉ | 42.73 MB | 12.09 (83) | 2.17 (461) | xám 160x160 lặp 3 kênh, chuẩn hóa ImageNet |

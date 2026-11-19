@@ -131,27 +131,51 @@ def load_multicultural_split_cache(
 
     clahe_tag = f"clahe{int(use_clahe)}"
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    raw_img_cache = CACHE_DIR / f"mc_{split_norm}_{crop_mode}_{img_size}_{clahe_tag}_imgs.npy"
+    raw_lbl_cache = CACHE_DIR / f"mc_{split_norm}_{crop_mode}_{img_size}_{clahe_tag}_lbls.npy"
     cache_file = CACHE_DIR / f"mc_{split_norm}_{crop_mode}_{img_size}_{clahe_tag}.npz"
+
+    if raw_img_cache.exists() and raw_lbl_cache.exists() and not rebuild:
+        imgs = np.load(raw_img_cache)
+        labels = np.load(raw_lbl_cache)
+        if len(imgs) == len(df):
+            return imgs, labels, df
 
     if cache_file.exists() and not rebuild:
         data = np.load(cache_file)
         imgs = data["images"]
         labels = data["labels"]
         if len(imgs) == len(df):
+            try:
+                np.save(raw_img_cache, imgs)
+                np.save(raw_lbl_cache, labels)
+            except Exception:
+                pass
             return imgs, labels, df
 
-    # Fast-path: If a 160x160 cache exists, downsample directly in ~2s instead of reading all raw files from disk
+    # Fast-path: If a 160x160 cache exists, downsample directly in ~1s instead of reading all raw files from disk
+    raw_160_img = CACHE_DIR / f"mc_{split_norm}_{crop_mode}_160_{clahe_tag}_imgs.npy"
+    raw_160_lbl = CACHE_DIR / f"mc_{split_norm}_{crop_mode}_160_{clahe_tag}_lbls.npy"
     cache_160 = CACHE_DIR / f"mc_{split_norm}_{crop_mode}_160_{clahe_tag}.npz"
-    if cache_160.exists() and img_size < 160:
-        data160 = np.load(cache_160)
-        imgs160 = data160["images"]
-        labels = data160["labels"]
+    if img_size < 160 and (raw_160_img.exists() or cache_160.exists()):
+        if raw_160_img.exists() and raw_160_lbl.exists():
+            imgs160 = np.load(raw_160_img)
+            labels = np.load(raw_160_lbl)
+        else:
+            data160 = np.load(cache_160)
+            imgs160 = data160["images"]
+            labels = data160["labels"]
         if len(imgs160) == len(df):
-            n = len(df)
             t_tensor = torch.from_numpy(imgs160).unsqueeze(1).float()
             resized_t = F.interpolate(t_tensor, size=(img_size, img_size), mode="area")
             imgs = resized_t.squeeze(1).byte().numpy()
-            np.savez_compressed(cache_file, images=imgs, labels=labels)
+            try:
+                np.save(raw_img_cache, imgs)
+                np.save(raw_lbl_cache, labels)
+                if not cache_file.exists():
+                    np.savez_compressed(cache_file, images=imgs, labels=labels)
+            except Exception:
+                pass
             return imgs, labels, df
 
     n = len(df)
@@ -174,6 +198,11 @@ def load_multicultural_split_cache(
             crop_box=KDEF_STUDIO_CROP_BOX,
         )
 
+    try:
+        np.save(raw_img_cache, imgs)
+        np.save(raw_lbl_cache, labels)
+    except Exception:
+        pass
     np.savez_compressed(cache_file, images=imgs, labels=labels)
     return imgs, labels, df
 
@@ -229,18 +258,25 @@ def compute_multicultural_metrics(
     per_class_precision: Dict[str, float] = {}
     per_class_recall: Dict[str, float] = {}
     per_class_f1: Dict[str, float] = {}
+    per_class_specificity: Dict[str, float] = {}
     per_class_auc: Dict[str, float] = {}
+    total_n = float(cm.sum())
 
     for c_idx, c_name in enumerate(CLASS_NAMES):
         tp = float(cm[c_idx, c_idx])
         support = float(cm[c_idx, :].sum())
         pred_pos = float(cm[:, c_idx].sum())
+        fn = support - tp
+        fp = pred_pos - tp
+        tn = max(total_n - tp - fn - fp, 0.0)
         r = tp / support if support > 0 else 0.0
         p = tp / pred_pos if pred_pos > 0 else 0.0
         f = (2.0 * p * r / (p + r)) if (p + r) > 0 else 0.0
+        spec = tn / (tn + fp) if (tn + fp) > 0 else 0.0
         per_class_precision[c_name] = round(p, 4)
         per_class_recall[c_name] = round(r, 4)
         per_class_f1[c_name] = round(f, 4)
+        per_class_specificity[c_name] = round(spec, 4)
 
         bin_true = (y_true == c_idx).astype(np.int32)
         if 0 < bin_true.sum() < len(bin_true):
@@ -250,19 +286,30 @@ def compute_multicultural_metrics(
 
     recalls = list(per_class_recall.values())
     recall_spread = round(float(max(recalls) - min(recalls)), 4) if recalls else 0.0
+    macro_precision = float(precision_score(y_true, y_pred, average="macro", zero_division=0))
+    weighted_precision = float(precision_score(y_true, y_pred, average="weighted", zero_division=0))
+    macro_recall = float(recall_score(y_true, y_pred, average="macro", zero_division=0))
+    weighted_recall = float(recall_score(y_true, y_pred, average="weighted", zero_division=0))
+    macro_specificity = float(np.mean(list(per_class_specificity.values()))) if per_class_specificity else 0.0
 
     result: Dict[str, Any] = {
         "n_samples": int(len(y_true)),
         "n_correct": int((y_true == y_pred).sum()),
         "accuracy": round(acc, 6),
+        "macro_precision": round(macro_precision, 6),
+        "weighted_precision": round(weighted_precision, 6),
+        "macro_recall": round(macro_recall, 6),
+        "weighted_recall": round(weighted_recall, 6),
         "macro_f1": round(macro_f1, 6),
         "weighted_f1": round(weighted_f1, 6),
+        "macro_specificity": round(macro_specificity, 6),
         "roc_auc_ovr_macro": round(roc_auc_macro, 6),
         "roc_auc_ovr_weighted": round(roc_auc_weighted, 6),
         "recall_spread": recall_spread,
         "per_class_precision": per_class_precision,
         "per_class_recall": per_class_recall,
         "per_class_f1": per_class_f1,
+        "per_class_specificity": per_class_specificity,
         "per_class_auc": per_class_auc,
         "confusion_matrix": cm.tolist(),
     }
@@ -733,6 +780,345 @@ def predict_resnet18_split(
         batch_u8 = images_u8[start : start + batch_size]
         xb = torch.from_numpy(batch_u8).to(device=device, dtype=torch.float32).unsqueeze(1).div_(255.0)
         with torch.amp.autocast("cuda", enabled=(device.type == "cuda")):
+            logits = model(xb)
+            if use_tta:
+                logits_flip = model(torch.flip(xb, dims=[3]))
+                logits = 0.5 * (logits + logits_flip)
+            probs = F.softmax(logits.float(), dim=1)
+        probs_np = probs.cpu().numpy()
+        preds_np = np.argmax(probs_np, axis=1)
+        preds_list.append(preds_np)
+        probs_list.append(probs_np)
+
+    return np.concatenate(preds_list, axis=0), np.concatenate(probs_list, axis=0)
+
+
+# ===========================================================================
+# TRANSFER LEARNING SUITE (6 Pre-trained Models from Reference Paper)
+#   VGG16, VGG19, InceptionV3, DenseNet201, ResNet50, EfficientNetB4
+#   Architecture (Section 3.2 & Fig. 1):
+#     - Pre-trained ImageNet feature extractor (initial layers frozen to retain
+#       general features; later layers fine-tuned on target dataset)
+#     - Global Average Pooling -> FC(128) -> FC(64) -> Dropout(0.7) -> FC(num_classes)
+# ===========================================================================
+
+PAPER_TL_ARCHITECTURES: Dict[str, str] = {
+    "vgg16": "VGG16",
+    "vgg19": "VGG19",
+    "inception_v3": "InceptionV3",
+    "densenet201": "DenseNet201",
+    "resnet50": "ResNet50",
+    "efficientnet_b4": "EfficientNetB4",
+}
+
+
+def normalize_tl_arch_key(arch: str) -> str:
+    k = str(arch).strip().lower().replace("-", "_")
+    aliases = {
+        "vgg_16": "vgg16",
+        "vgg_19": "vgg19",
+        "inceptionv3": "inception_v3",
+        "densenet_201": "densenet201",
+        "resnet_50": "resnet50",
+        "efficientnetb4": "efficientnet_b4",
+    }
+    k = aliases.get(k, k)
+    if k not in PAPER_TL_ARCHITECTURES:
+        raise ValueError(f"Unsupported transfer learning arch '{arch}'. Expected one of {list(PAPER_TL_ARCHITECTURES)}")
+    return k
+
+
+class TransferLearningEmotion(nn.Module):
+    """
+    Pre-trained Transfer Learning model implementing the architecture in Section 3.2 & Fig. 1
+    of the reference paper ('Enhancing Esophageal Cancer Detection Using Transfer Learning Techniques'):
+      - Pre-trained on ImageNet-1K (`VGG16`, `VGG19`, `InceptionV3`, `DenseNet201`, `ResNet50`, `EfficientNetB4`).
+      - Initial layers (`frozen_features`) are frozen to retain general features (edges, textures, patterns);
+        later layers (`trainable_features`) are fine-tuned on the target facial emotion dataset.
+      - Custom classification head:
+        `Global Average Pooling` -> `FC(128)` -> `FC(64)` -> `Dropout(dropout)` -> `FC(num_classes)`.
+      - Seamlessly accepts 1-channel grayscale `[B, 1, H, W]` or 3-channel `[B, 3, H, W]` in `[0, 1]`
+        (or normalized 1-ch if `input_is_normalized_1ch=True`) and applies ImageNet RGB normalization.
+    """
+
+    def __init__(
+        self,
+        arch: str = "densenet201",
+        num_classes: int = 7,
+        pretrained: bool = True,
+        dropout: float = 0.7,
+        freeze_initial: bool = True,
+        input_is_normalized_1ch: bool = False,
+        src_mean: float = DEFAULT_MULTICULTURAL_MEAN,
+        src_std: float = DEFAULT_MULTICULTURAL_STD,
+    ):
+        super().__init__()
+        self.arch_key = normalize_tl_arch_key(arch)
+        self.display_name = PAPER_TL_ARCHITECTURES[self.arch_key]
+        self.model_name = f"{self.arch_key}_tl_imagenet1k"
+        self.num_classes = int(num_classes)
+        self.dropout_p = float(dropout)
+        self.freeze_initial = bool(freeze_initial)
+        self.input_is_normalized_1ch = bool(input_is_normalized_1ch)
+        self.src_mean = float(src_mean)
+        self.src_std = float(src_std)
+
+        if self.arch_key == "vgg16":
+            weights = tv_models.VGG16_Weights.IMAGENET1K_V1 if pretrained else None
+            feats = tv_models.vgg16(weights=weights).features
+            self.frozen_features = feats[:24]
+            self.trainable_features = feats[24:]
+            out_ch = 512
+        elif self.arch_key == "vgg19":
+            weights = tv_models.VGG19_Weights.IMAGENET1K_V1 if pretrained else None
+            feats = tv_models.vgg19(weights=weights).features
+            self.frozen_features = feats[:28]
+            self.trainable_features = feats[28:]
+            out_ch = 512
+        elif self.arch_key == "inception_v3":
+            if pretrained:
+                inc = tv_models.inception_v3(weights=tv_models.Inception_V3_Weights.IMAGENET1K_V1)
+            else:
+                inc = tv_models.inception_v3(weights=None, aux_logits=False, init_weights=False)
+            self.frozen_features = nn.Sequential(
+                inc.Conv2d_1a_3x3,
+                inc.Conv2d_2a_3x3,
+                inc.Conv2d_2b_3x3,
+                inc.maxpool1,
+                inc.Conv2d_3b_1x1,
+                inc.Conv2d_4a_3x3,
+                inc.maxpool2,
+                inc.Mixed_5b,
+                inc.Mixed_5c,
+                inc.Mixed_5d,
+                inc.Mixed_6a,
+                inc.Mixed_6b,
+                inc.Mixed_6c,
+                inc.Mixed_6d,
+                inc.Mixed_6e,
+            )
+            self.trainable_features = nn.Sequential(
+                inc.Mixed_7a,
+                inc.Mixed_7b,
+                inc.Mixed_7c,
+            )
+            out_ch = 2048
+        elif self.arch_key == "densenet201":
+            weights = tv_models.DenseNet201_Weights.IMAGENET1K_V1 if pretrained else None
+            dn = tv_models.densenet201(weights=weights).features
+            self.frozen_features = nn.Sequential(
+                dn.conv0,
+                dn.norm0,
+                dn.relu0,
+                dn.pool0,
+                dn.denseblock1,
+                dn.transition1,
+                dn.denseblock2,
+                dn.transition2,
+                dn.denseblock3,
+                dn.transition3,
+            )
+            self.trainable_features = nn.Sequential(
+                dn.denseblock4,
+                dn.norm5,
+                nn.ReLU(inplace=True),
+            )
+            out_ch = 1920
+        elif self.arch_key == "resnet50":
+            weights = tv_models.ResNet50_Weights.IMAGENET1K_V1 if pretrained else None
+            rn = tv_models.resnet50(weights=weights)
+            self.frozen_features = nn.Sequential(
+                rn.conv1,
+                rn.bn1,
+                rn.relu,
+                rn.maxpool,
+                rn.layer1,
+                rn.layer2,
+                rn.layer3,
+            )
+            self.trainable_features = nn.Sequential(
+                rn.layer4,
+            )
+            out_ch = 2048
+        elif self.arch_key == "efficientnet_b4":
+            weights = tv_models.EfficientNet_B4_Weights.IMAGENET1K_V1 if pretrained else None
+            ef = tv_models.efficientnet_b4(weights=weights).features
+            self.frozen_features = ef[:7]
+            self.trainable_features = ef[7:]
+            out_ch = 1792
+        else:
+            raise ValueError(f"Unknown arch_key: {self.arch_key}")
+
+        self.out_channels = out_ch
+
+        # Paper Section 3.2 Custom Layers:
+        # Global Average Pooling -> FC(128) -> FC(64) -> Dropout(0.7) -> FC(num_classes)
+        self.head = nn.Sequential(
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Flatten(1),
+            nn.Linear(out_ch, 128),
+            nn.BatchNorm1d(128),
+            nn.ReLU(inplace=True),
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=self.dropout_p),
+            nn.Linear(64, self.num_classes),
+        )
+
+        self.register_buffer(
+            "imagenet_mean",
+            torch.tensor(IMAGENET_MEAN, dtype=torch.float32).view(1, 3, 1, 1),
+            persistent=False,
+        )
+        self.register_buffer(
+            "imagenet_std",
+            torch.tensor(IMAGENET_STD, dtype=torch.float32).view(1, 3, 1, 1),
+            persistent=False,
+        )
+
+        self.set_initial_frozen(self.freeze_initial)
+
+    def set_initial_frozen(self, freeze_initial: bool = True) -> None:
+        self.freeze_initial = bool(freeze_initial)
+        for p in self.frozen_features.parameters():
+            p.requires_grad = not self.freeze_initial
+        for p in self.trainable_features.parameters():
+            p.requires_grad = True
+        for p in self.head.parameters():
+            p.requires_grad = True
+        if self.freeze_initial:
+            self.frozen_features.eval()
+
+    def train(self, mode: bool = True) -> "TransferLearningEmotion":
+        super().train(mode)
+        if mode and self.freeze_initial:
+            self.frozen_features.eval()
+        return self
+
+    def get_gradcam_target_layers(self) -> List[nn.Module]:
+        return [self.trainable_features[-1]]
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.input_is_normalized_1ch:
+            x = torch.clamp(x * self.src_std + self.src_mean, 0.0, 1.0)
+        if x.shape[1] == 1:
+            x = x.repeat(1, 3, 1, 1)
+        x = (x - self.imagenet_mean) / self.imagenet_std
+        if self.freeze_initial and not any(p.requires_grad for p in self.frozen_features.parameters()):
+            with torch.no_grad():
+                f = self.frozen_features(x)
+        else:
+            f = self.frozen_features(x)
+        f = self.trainable_features(f)
+        return self.head(f)
+
+
+def save_tl_checkpoint(
+    model: TransferLearningEmotion,
+    checkpoint_path: Union[str, Path],
+    config: Dict[str, Any],
+    val_metrics: Dict[str, Any],
+    epoch: int,
+    history: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
+) -> Path:
+    checkpoint_path = Path(checkpoint_path)
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "model_type": "transfer_learning",
+        "arch": model.arch_key,
+        "display_name": model.display_name,
+        "model_name": model.model_name,
+        "state_dict": model.state_dict(),
+        "config": config,
+        "normalization": {
+            "mode": "imagenet_rgb_from_gray",
+            "imagenet_mean": list(IMAGENET_MEAN),
+            "imagenet_std": list(IMAGENET_STD),
+            "multicultural_mean": DEFAULT_MULTICULTURAL_MEAN,
+            "multicultural_std": DEFAULT_MULTICULTURAL_STD,
+        },
+        "epoch": int(epoch),
+        "val_macro_f1": float(val_metrics.get("macro_f1", 0.0)),
+        "val_accuracy": float(val_metrics.get("accuracy", 0.0)),
+        "val_roc_auc": float(val_metrics.get("roc_auc_ovr_macro", 0.0)),
+        "val_metrics": val_metrics,
+        "history": history or {},
+    }
+    torch.save(payload, checkpoint_path)
+    return checkpoint_path
+
+
+def load_tl_checkpoint(
+    checkpoint_path: Union[str, Path],
+    device: Optional[torch.device] = None,
+    map_location: Optional[Union[str, torch.device]] = None,
+    input_is_normalized_1ch: bool = False,
+) -> Tuple[TransferLearningEmotion, Dict[str, Any]]:
+    if map_location is not None:
+        device = torch.device(map_location)
+    elif device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    cfg = ckpt.get("config", {})
+    arch = ckpt.get("arch") or cfg.get("arch", "densenet201")
+    dropout = float(cfg.get("dropout", 0.7))
+    freeze_initial = bool(cfg.get("freeze_initial", True))
+    model = TransferLearningEmotion(
+        arch=arch,
+        num_classes=int(cfg.get("num_classes", 7)),
+        pretrained=False,
+        dropout=dropout,
+        freeze_initial=freeze_initial,
+        input_is_normalized_1ch=input_is_normalized_1ch,
+    )
+    model.load_state_dict(ckpt["state_dict"], strict=True)
+    model.to(device)
+    model.eval()
+    meta = {
+        "arch": model.arch_key,
+        "display_name": model.display_name,
+        "model_name": ckpt.get("model_name", model.model_name),
+        "img_size": int(cfg.get("img_size", 160)),
+        "crop_mode": str(cfg.get("crop_mode", DEFAULT_CROP_MODE)),
+        "ssd_margin": float(cfg.get("ssd_margin", DEFAULT_SSD_MARGIN)),
+        "use_clahe": bool(cfg.get("use_clahe", True)),
+        "dropout": dropout,
+        "freeze_initial": freeze_initial,
+        "epoch": ckpt.get("epoch"),
+        "val_macro_f1": ckpt.get("val_macro_f1"),
+        "val_accuracy": ckpt.get("val_accuracy"),
+        "val_roc_auc": ckpt.get("val_roc_auc"),
+        "config": cfg,
+        "history": ckpt.get("history", {}),
+    }
+    return model, meta
+
+
+@torch.no_grad()
+def predict_tl_split(
+    model: nn.Module,
+    images_u8: np.ndarray,
+    device: torch.device,
+    batch_size: int = 128,
+    use_tta: bool = False,
+    eval_img_size: Optional[int] = None,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Runs inference on `images_u8` `(N, H, W)` uint8 array in `[0, 255]`.
+    Returns `(y_pred, y_prob)`.
+    """
+    model.eval()
+    n = len(images_u8)
+    preds_list: List[np.ndarray] = []
+    probs_list: List[np.ndarray] = []
+
+    for start in range(0, n, batch_size):
+        batch_u8 = images_u8[start : start + batch_size]
+        xb = torch.from_numpy(batch_u8).to(device=device, dtype=torch.float32).unsqueeze(1).div_(255.0)
+        if eval_img_size is not None and xb.shape[-1] != eval_img_size:
+            xb = F.interpolate(xb, size=(eval_img_size, eval_img_size), mode="area")
+        with torch.amp.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda")):
             logits = model(xb)
             if use_tta:
                 logits_flip = model(torch.flip(xb, dims=[3]))

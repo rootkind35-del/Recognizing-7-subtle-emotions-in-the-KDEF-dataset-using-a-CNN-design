@@ -8,12 +8,21 @@
     "order_identical": true
   },
   "figures": [
-    "reports/figures/mc_test_confusion_3models.png",
-    "reports/figures/mc_test_accuracy_by_source_3models.png"
+    "reports/figures/paper_fig1_proposed_architecture.png",
+    "reports/figures/paper_fig2_accuracy_curves.png",
+    "reports/figures/paper_fig3_loss_curves.png",
+    "reports/figures/paper_fig4_confusion_matrices.png",
+    "reports/figures/paper_table1_metrics_bar.png",
+    "reports/figures/mc_test_overall_metrics_3models.png",
+    "reports/figures/mc_test_accuracy_by_source_3models.png",
+    "reports/figures/mc_test_f1_by_emotion_3models.png",
+    "reports/figures/mc_test_confusion_3models.png"
   ],
   "models": {
     "cnn": {
-      "name": "KDEF_Stem2Ch_MS4_Symmetric (CNN chính)",
+      "short_name": "CNN",
+      "name": "CNN (KDEF_Stem2Ch_MS4_Symmetric)",
+      "is_paper_comparison": true,
       "checkpoint": "checkpoints/cnn_multicultural.pt",
       "checkpoint_mb": 5.194,
       "n_parameters": 1349165,
@@ -22,25 +31,30 @@
       "eval_mode": "single_view",
       "val_macro_f1_ckpt": 0.710429,
       "latency_cpu": {
-        "ms_per_image": 17.322,
-        "ms_median": 16.938,
-        "ms_p95": 19.953,
-        "fps": 57.7,
-        "n_runs": 300
+        "ms_per_image": 16.43,
+        "ms_median": 16.428,
+        "ms_p95": 17.169,
+        "fps": 60.9,
+        "n_runs": 60
       },
       "latency_gpu": {
-        "ms_per_image": 2.15,
-        "ms_median": 1.748,
-        "ms_p95": 3.029,
-        "fps": 465.0,
-        "n_runs": 300
+        "ms_per_image": 2.029,
+        "ms_median": 1.751,
+        "ms_p95": 3.147,
+        "fps": 492.9,
+        "n_runs": 100
       },
       "metrics": {
         "n_samples": 4875,
         "n_correct": 3578,
         "accuracy": 0.733949,
+        "macro_precision": 0.738077,
+        "weighted_precision": 0.736589,
+        "macro_recall": 0.722985,
+        "weighted_recall": 0.733949,
         "macro_f1": 0.728246,
         "weighted_f1": 0.733279,
+        "macro_specificity": 0.955029,
         "roc_auc_ovr_macro": 0.944964,
         "roc_auc_ovr_weighted": 0.94303,
         "recall_spread": 0.3484,
@@ -70,6 +84,15 @@
           "neutral": 0.726,
           "sad": 0.6236,
           "surprise": 0.8136
+        },
+        "per_class_specificity": {
+          "angry": 0.9524,
+          "disgust": 0.9929,
+          "fear": 0.9529,
+          "happy": 0.9734,
+          "neutral": 0.9299,
+          "sad": 0.9114,
+          "surprise": 0.9723
         },
         "per_class_auc": {
           "angry": 0.9231,
@@ -284,29 +307,1764 @@
         }
       }
     },
+    "vgg16": {
+      "short_name": "VGG16",
+      "name": "VGG16 (ImageNet Transfer Learning)",
+      "is_paper_comparison": true,
+      "checkpoint": "checkpoints/vgg16_multicultural.pt",
+      "checkpoint_mb": 56.439,
+      "n_parameters": 14789447,
+      "macs": 5011218880,
+      "input": "xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7",
+      "eval_mode": "single_view",
+      "val_macro_f1_ckpt": 0.630836,
+      "latency_cpu": {
+        "ms_per_image": 33.387,
+        "ms_median": 34.152,
+        "ms_p95": 35.242,
+        "fps": 30.0,
+        "n_runs": 30
+      },
+      "latency_gpu": {
+        "ms_per_image": 3.571,
+        "ms_median": 2.471,
+        "ms_p95": 7.956,
+        "fps": 280.0,
+        "n_runs": 80
+      },
+      "metrics": {
+        "n_samples": 4875,
+        "n_correct": 3221,
+        "accuracy": 0.660718,
+        "macro_precision": 0.655215,
+        "weighted_precision": 0.661528,
+        "macro_recall": 0.654167,
+        "weighted_recall": 0.660718,
+        "macro_f1": 0.654385,
+        "weighted_f1": 0.660819,
+        "macro_specificity": 0.942757,
+        "roc_auc_ovr_macro": 0.904746,
+        "roc_auc_ovr_weighted": 0.9043,
+        "recall_spread": 0.3763,
+        "per_class_precision": {
+          "angry": 0.5904,
+          "disgust": 0.7033,
+          "fear": 0.523,
+          "happy": 0.862,
+          "neutral": 0.6452,
+          "sad": 0.5,
+          "surprise": 0.7626
+        },
+        "per_class_recall": {
+          "angry": 0.5659,
+          "disgust": 0.7238,
+          "fear": 0.4944,
+          "happy": 0.8707,
+          "neutral": 0.6444,
+          "sad": 0.5463,
+          "surprise": 0.7336
+        },
+        "per_class_f1": {
+          "angry": 0.5779,
+          "disgust": 0.7134,
+          "fear": 0.5083,
+          "happy": 0.8663,
+          "neutral": 0.6448,
+          "sad": 0.5221,
+          "surprise": 0.7478
+        },
+        "per_class_specificity": {
+          "angry": 0.9369,
+          "disgust": 0.9843,
+          "fear": 0.9229,
+          "happy": 0.9602,
+          "neutral": 0.9294,
+          "sad": 0.8963,
+          "surprise": 0.9693
+        },
+        "per_class_auc": {
+          "angry": 0.8791,
+          "disgust": 0.9424,
+          "fear": 0.8375,
+          "happy": 0.9708,
+          "neutral": 0.9007,
+          "sad": 0.8529,
+          "surprise": 0.9497
+        },
+        "confusion_matrix": [
+          [
+            382,
+            26,
+            74,
+            25,
+            50,
+            97,
+            21
+          ],
+          [
+            26,
+            173,
+            9,
+            6,
+            3,
+            20,
+            2
+          ],
+          [
+            73,
+            10,
+            352,
+            22,
+            57,
+            122,
+            76
+          ],
+          [
+            19,
+            9,
+            18,
+            943,
+            47,
+            32,
+            15
+          ],
+          [
+            48,
+            5,
+            49,
+            35,
+            522,
+            141,
+            10
+          ],
+          [
+            83,
+            22,
+            94,
+            35,
+            111,
+            425,
+            8
+          ],
+          [
+            16,
+            1,
+            77,
+            28,
+            19,
+            13,
+            424
+          ]
+        ],
+        "per_source": {
+          "kdef": {
+            "n_samples": 980,
+            "n_correct": 741,
+            "accuracy": 0.756122,
+            "macro_f1": 0.754949,
+            "weighted_f1": 0.754949,
+            "roc_auc_ovr_macro": 0.952657,
+            "per_class_recall": {
+              "angry": 0.6143,
+              "disgust": 0.7857,
+              "fear": 0.5929,
+              "happy": 0.9786,
+              "neutral": 0.8071,
+              "sad": 0.6857,
+              "surprise": 0.8286
+            },
+            "per_class_f1": {
+              "angry": 0.6745,
+              "disgust": 0.756,
+              "fear": 0.5929,
+              "happy": 0.9716,
+              "neutral": 0.8043,
+              "sad": 0.6713,
+              "surprise": 0.814
+            }
+          },
+          "radiate": {
+            "n_samples": 306,
+            "n_correct": 233,
+            "accuracy": 0.761438,
+            "macro_f1": 0.754152,
+            "weighted_f1": 0.761943,
+            "roc_auc_ovr_macro": 0.953033,
+            "per_class_recall": {
+              "angry": 0.7727,
+              "disgust": 0.75,
+              "fear": 0.75,
+              "happy": 0.875,
+              "neutral": 0.8409,
+              "sad": 0.5455,
+              "surprise": 0.7273
+            },
+            "per_class_f1": {
+              "angry": 0.6939,
+              "disgust": 0.7586,
+              "fear": 0.8049,
+              "happy": 0.8819,
+              "neutral": 0.8132,
+              "sad": 0.5647,
+              "surprise": 0.7619
+            }
+          },
+          "fer2013": {
+            "n_samples": 3589,
+            "n_correct": 2247,
+            "accuracy": 0.62608,
+            "macro_f1": 0.602414,
+            "weighted_f1": 0.626504,
+            "roc_auc_ovr_macro": 0.876712,
+            "per_class_recall": {
+              "angry": 0.5336,
+              "disgust": 0.5455,
+              "fear": 0.447,
+              "happy": 0.8532,
+              "neutral": 0.5942,
+              "sad": 0.5135,
+              "surprise": 0.7019
+            },
+            "per_class_f1": {
+              "angry": 0.5408,
+              "disgust": 0.5607,
+              "fear": 0.4614,
+              "happy": 0.8484,
+              "neutral": 0.5966,
+              "sad": 0.4853,
+              "surprise": 0.7237
+            }
+          }
+        },
+        "per_ethnic_group": {
+          "KDEF": {
+            "n_samples": 980,
+            "n_correct": 741,
+            "accuracy": 0.756122,
+            "macro_f1": 0.754949
+          },
+          "B": {
+            "n_samples": 112,
+            "n_correct": 80,
+            "accuracy": 0.714286,
+            "macro_f1": 0.704917
+          },
+          "A": {
+            "n_samples": 56,
+            "n_correct": 41,
+            "accuracy": 0.732143,
+            "macro_f1": 0.710834
+          },
+          "H": {
+            "n_samples": 56,
+            "n_correct": 45,
+            "accuracy": 0.803571,
+            "macro_f1": 0.77564
+          },
+          "W": {
+            "n_samples": 82,
+            "n_correct": 67,
+            "accuracy": 0.817073,
+            "macro_f1": 0.820984
+          },
+          "FER": {
+            "n_samples": 3589,
+            "n_correct": 2247,
+            "accuracy": 0.62608,
+            "macro_f1": 0.602414
+          }
+        },
+        "per_gender": {
+          "female": {
+            "n_samples": 783,
+            "accuracy": 0.720307,
+            "macro_f1": 0.716583
+          },
+          "male": {
+            "n_samples": 503,
+            "accuracy": 0.815109,
+            "macro_f1": 0.814836
+          }
+        },
+        "angle_accuracy": {
+          "FL": 0.709184,
+          "FR": 0.663265,
+          "HL": 0.811224,
+          "HR": 0.780612,
+          "S": 0.816327
+        }
+      }
+    },
+    "vgg19": {
+      "short_name": "VGG19",
+      "name": "VGG19 (ImageNet Transfer Learning)",
+      "is_paper_comparison": true,
+      "checkpoint": "checkpoints/vgg19_multicultural.pt",
+      "checkpoint_mb": 76.696,
+      "n_parameters": 20099143,
+      "macs": 6370173376,
+      "input": "xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7",
+      "eval_mode": "single_view",
+      "val_macro_f1_ckpt": 0.604202,
+      "latency_cpu": {
+        "ms_per_image": 41.401,
+        "ms_median": 42.903,
+        "ms_p95": 43.607,
+        "fps": 24.2,
+        "n_runs": 30
+      },
+      "latency_gpu": {
+        "ms_per_image": 4.281,
+        "ms_median": 3.023,
+        "ms_p95": 8.862,
+        "fps": 233.6,
+        "n_runs": 80
+      },
+      "metrics": {
+        "n_samples": 4875,
+        "n_correct": 3143,
+        "accuracy": 0.644718,
+        "macro_precision": 0.641486,
+        "weighted_precision": 0.647037,
+        "macro_recall": 0.638366,
+        "weighted_recall": 0.644718,
+        "macro_f1": 0.639601,
+        "weighted_f1": 0.645599,
+        "macro_specificity": 0.94,
+        "roc_auc_ovr_macro": 0.891733,
+        "roc_auc_ovr_weighted": 0.890675,
+        "recall_spread": 0.3443,
+        "per_class_precision": {
+          "angry": 0.5381,
+          "disgust": 0.6898,
+          "fear": 0.5186,
+          "happy": 0.8478,
+          "neutral": 0.6194,
+          "sad": 0.4957,
+          "surprise": 0.781
+        },
+        "per_class_recall": {
+          "angry": 0.5541,
+          "disgust": 0.7071,
+          "fear": 0.5098,
+          "happy": 0.8541,
+          "neutral": 0.6148,
+          "sad": 0.5193,
+          "surprise": 0.7093
+        },
+        "per_class_f1": {
+          "angry": 0.546,
+          "disgust": 0.6983,
+          "fear": 0.5142,
+          "happy": 0.851,
+          "neutral": 0.6171,
+          "sad": 0.5072,
+          "surprise": 0.7434
+        },
+        "per_class_specificity": {
+          "angry": 0.9236,
+          "disgust": 0.9836,
+          "fear": 0.919,
+          "happy": 0.9562,
+          "neutral": 0.9247,
+          "sad": 0.8997,
+          "surprise": 0.9732
+        },
+        "per_class_auc": {
+          "angry": 0.8547,
+          "disgust": 0.9377,
+          "fear": 0.8321,
+          "happy": 0.9604,
+          "neutral": 0.8815,
+          "sad": 0.8401,
+          "surprise": 0.9356
+        },
+        "confusion_matrix": [
+          [
+            374,
+            27,
+            67,
+            25,
+            62,
+            101,
+            19
+          ],
+          [
+            29,
+            169,
+            8,
+            5,
+            4,
+            23,
+            1
+          ],
+          [
+            91,
+            10,
+            363,
+            27,
+            57,
+            106,
+            58
+          ],
+          [
+            19,
+            5,
+            25,
+            925,
+            48,
+            44,
+            17
+          ],
+          [
+            77,
+            5,
+            45,
+            46,
+            498,
+            125,
+            14
+          ],
+          [
+            84,
+            27,
+            104,
+            37,
+            116,
+            404,
+            6
+          ],
+          [
+            21,
+            2,
+            88,
+            26,
+            19,
+            12,
+            410
+          ]
+        ],
+        "per_source": {
+          "kdef": {
+            "n_samples": 980,
+            "n_correct": 714,
+            "accuracy": 0.728571,
+            "macro_f1": 0.730781,
+            "weighted_f1": 0.730781,
+            "roc_auc_ovr_macro": 0.939052,
+            "per_class_recall": {
+              "angry": 0.6,
+              "disgust": 0.8,
+              "fear": 0.65,
+              "happy": 0.9357,
+              "neutral": 0.7071,
+              "sad": 0.6286,
+              "surprise": 0.7786
+            },
+            "per_class_f1": {
+              "angry": 0.6437,
+              "disgust": 0.7724,
+              "fear": 0.6087,
+              "happy": 0.9458,
+              "neutral": 0.7388,
+              "sad": 0.5926,
+              "surprise": 0.8134
+            }
+          },
+          "radiate": {
+            "n_samples": 306,
+            "n_correct": 221,
+            "accuracy": 0.722222,
+            "macro_f1": 0.710715,
+            "weighted_f1": 0.72318,
+            "roc_auc_ovr_macro": 0.917559,
+            "per_class_recall": {
+              "angry": 0.7273,
+              "disgust": 0.6818,
+              "fear": 0.7273,
+              "happy": 0.8594,
+              "neutral": 0.7727,
+              "sad": 0.5227,
+              "surprise": 0.6818
+            },
+            "per_class_f1": {
+              "angry": 0.6667,
+              "disgust": 0.6316,
+              "fear": 0.7529,
+              "happy": 0.8871,
+              "neutral": 0.764,
+              "sad": 0.575,
+              "surprise": 0.6977
+            }
+          },
+          "fer2013": {
+            "n_samples": 3589,
+            "n_correct": 2208,
+            "accuracy": 0.615213,
+            "macro_f1": 0.591465,
+            "weighted_f1": 0.615669,
+            "roc_auc_ovr_macro": 0.867541,
+            "per_class_recall": {
+              "angry": 0.5255,
+              "disgust": 0.4909,
+              "fear": 0.4545,
+              "happy": 0.8407,
+              "neutral": 0.5831,
+              "sad": 0.4933,
+              "surprise": 0.6875
+            },
+            "per_class_f1": {
+              "angry": 0.5094,
+              "disgust": 0.5455,
+              "fear": 0.4669,
+              "happy": 0.8336,
+              "neutral": 0.5807,
+              "sad": 0.4819,
+              "surprise": 0.7222
+            }
+          }
+        },
+        "per_ethnic_group": {
+          "KDEF": {
+            "n_samples": 980,
+            "n_correct": 714,
+            "accuracy": 0.728571,
+            "macro_f1": 0.730781
+          },
+          "B": {
+            "n_samples": 112,
+            "n_correct": 74,
+            "accuracy": 0.660714,
+            "macro_f1": 0.622094
+          },
+          "A": {
+            "n_samples": 56,
+            "n_correct": 42,
+            "accuracy": 0.75,
+            "macro_f1": 0.741238
+          },
+          "H": {
+            "n_samples": 56,
+            "n_correct": 46,
+            "accuracy": 0.821429,
+            "macro_f1": 0.816238
+          },
+          "W": {
+            "n_samples": 82,
+            "n_correct": 59,
+            "accuracy": 0.719512,
+            "macro_f1": 0.726012
+          },
+          "FER": {
+            "n_samples": 3589,
+            "n_correct": 2208,
+            "accuracy": 0.615213,
+            "macro_f1": 0.591465
+          }
+        },
+        "per_gender": {
+          "female": {
+            "n_samples": 783,
+            "accuracy": 0.694764,
+            "macro_f1": 0.695827
+          },
+          "male": {
+            "n_samples": 503,
+            "accuracy": 0.777336,
+            "macro_f1": 0.776774
+          }
+        },
+        "angle_accuracy": {
+          "FL": 0.658163,
+          "FR": 0.637755,
+          "HL": 0.760204,
+          "HR": 0.77551,
+          "S": 0.811224
+        }
+      }
+    },
+    "inception_v3": {
+      "short_name": "InceptionV3",
+      "name": "InceptionV3 (ImageNet Transfer Learning)",
+      "is_paper_comparison": true,
+      "checkpoint": "checkpoints/inception_v3_multicultural.pt",
+      "checkpoint_mb": 84.489,
+      "n_parameters": 22056935,
+      "macs": 730923808,
+      "input": "xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7",
+      "eval_mode": "single_view",
+      "val_macro_f1_ckpt": 0.531368,
+      "latency_cpu": {
+        "ms_per_image": 24.702,
+        "ms_median": 24.082,
+        "ms_p95": 27.331,
+        "fps": 40.5,
+        "n_runs": 30
+      },
+      "latency_gpu": {
+        "ms_per_image": 11.72,
+        "ms_median": 11.662,
+        "ms_p95": 16.153,
+        "fps": 85.3,
+        "n_runs": 80
+      },
+      "metrics": {
+        "n_samples": 4875,
+        "n_correct": 2803,
+        "accuracy": 0.574974,
+        "macro_precision": 0.561381,
+        "weighted_precision": 0.57734,
+        "macro_recall": 0.563987,
+        "weighted_recall": 0.574974,
+        "macro_f1": 0.562054,
+        "weighted_f1": 0.575628,
+        "macro_specificity": 0.928329,
+        "roc_auc_ovr_macro": 0.852909,
+        "roc_auc_ovr_weighted": 0.853936,
+        "recall_spread": 0.3697,
+        "per_class_precision": {
+          "angry": 0.4899,
+          "disgust": 0.5379,
+          "fear": 0.4429,
+          "happy": 0.7983,
+          "neutral": 0.5374,
+          "sad": 0.4541,
+          "surprise": 0.6691
+        },
+        "per_class_recall": {
+          "angry": 0.4681,
+          "disgust": 0.5941,
+          "fear": 0.4087,
+          "happy": 0.7784,
+          "neutral": 0.5494,
+          "sad": 0.509,
+          "surprise": 0.6401
+        },
+        "per_class_f1": {
+          "angry": 0.4788,
+          "disgust": 0.5646,
+          "fear": 0.4251,
+          "happy": 0.7882,
+          "neutral": 0.5433,
+          "sad": 0.48,
+          "surprise": 0.6543
+        },
+        "per_class_specificity": {
+          "angry": 0.9217,
+          "disgust": 0.9737,
+          "fear": 0.9121,
+          "happy": 0.9438,
+          "neutral": 0.9058,
+          "sad": 0.8838,
+          "surprise": 0.9574
+        },
+        "per_class_auc": {
+          "angry": 0.8136,
+          "disgust": 0.8818,
+          "fear": 0.7817,
+          "happy": 0.9312,
+          "neutral": 0.8515,
+          "sad": 0.7977,
+          "surprise": 0.9129
+        },
+        "confusion_matrix": [
+          [
+            316,
+            30,
+            73,
+            37,
+            78,
+            121,
+            20
+          ],
+          [
+            31,
+            142,
+            20,
+            11,
+            9,
+            23,
+            3
+          ],
+          [
+            69,
+            20,
+            291,
+            28,
+            82,
+            126,
+            96
+          ],
+          [
+            47,
+            21,
+            40,
+            843,
+            62,
+            47,
+            23
+          ],
+          [
+            66,
+            10,
+            57,
+            66,
+            445,
+            140,
+            26
+          ],
+          [
+            96,
+            34,
+            79,
+            44,
+            114,
+            396,
+            15
+          ],
+          [
+            20,
+            7,
+            97,
+            27,
+            38,
+            19,
+            370
+          ]
+        ],
+        "per_source": {
+          "kdef": {
+            "n_samples": 980,
+            "n_correct": 550,
+            "accuracy": 0.561224,
+            "macro_f1": 0.562068,
+            "weighted_f1": 0.562068,
+            "roc_auc_ovr_macro": 0.86592,
+            "per_class_recall": {
+              "angry": 0.4929,
+              "disgust": 0.6357,
+              "fear": 0.4214,
+              "happy": 0.7,
+              "neutral": 0.5714,
+              "sad": 0.4643,
+              "surprise": 0.6429
+            },
+            "per_class_f1": {
+              "angry": 0.537,
+              "disgust": 0.5723,
+              "fear": 0.4307,
+              "happy": 0.7396,
+              "neutral": 0.5735,
+              "sad": 0.4498,
+              "surprise": 0.6316
+            }
+          },
+          "radiate": {
+            "n_samples": 306,
+            "n_correct": 171,
+            "accuracy": 0.558824,
+            "macro_f1": 0.542495,
+            "weighted_f1": 0.56309,
+            "roc_auc_ovr_macro": 0.857746,
+            "per_class_recall": {
+              "angry": 0.5682,
+              "disgust": 0.6136,
+              "fear": 0.5227,
+              "happy": 0.6406,
+              "neutral": 0.5909,
+              "sad": 0.4545,
+              "surprise": 0.4091
+            },
+            "per_class_f1": {
+              "angry": 0.4808,
+              "disgust": 0.6067,
+              "fear": 0.5679,
+              "happy": 0.7009,
+              "neutral": 0.5474,
+              "sad": 0.4938,
+              "surprise": 0.4
+            }
+          },
+          "fer2013": {
+            "n_samples": 3589,
+            "n_correct": 2082,
+            "accuracy": 0.580106,
+            "macro_f1": 0.554345,
+            "weighted_f1": 0.580403,
+            "roc_auc_ovr_macro": 0.841586,
+            "per_class_recall": {
+              "angry": 0.4521,
+              "disgust": 0.4727,
+              "fear": 0.3958,
+              "happy": 0.8009,
+              "neutral": 0.5415,
+              "sad": 0.5236,
+              "surprise": 0.6514
+            },
+            "per_class_f1": {
+              "angry": 0.463,
+              "disgust": 0.5049,
+              "fear": 0.4122,
+              "happy": 0.8014,
+              "neutral": 0.5364,
+              "sad": 0.4859,
+              "surprise": 0.6767
+            }
+          }
+        },
+        "per_ethnic_group": {
+          "KDEF": {
+            "n_samples": 980,
+            "n_correct": 550,
+            "accuracy": 0.561224,
+            "macro_f1": 0.562068
+          },
+          "B": {
+            "n_samples": 112,
+            "n_correct": 53,
+            "accuracy": 0.473214,
+            "macro_f1": 0.447782
+          },
+          "A": {
+            "n_samples": 56,
+            "n_correct": 29,
+            "accuracy": 0.517857,
+            "macro_f1": 0.465834
+          },
+          "H": {
+            "n_samples": 56,
+            "n_correct": 39,
+            "accuracy": 0.696429,
+            "macro_f1": 0.675567
+          },
+          "W": {
+            "n_samples": 82,
+            "n_correct": 50,
+            "accuracy": 0.609756,
+            "macro_f1": 0.60331
+          },
+          "FER": {
+            "n_samples": 3589,
+            "n_correct": 2082,
+            "accuracy": 0.580106,
+            "macro_f1": 0.554345
+          }
+        },
+        "per_gender": {
+          "female": {
+            "n_samples": 783,
+            "accuracy": 0.532567,
+            "macro_f1": 0.52965
+          },
+          "male": {
+            "n_samples": 503,
+            "accuracy": 0.604374,
+            "macro_f1": 0.605417
+          }
+        },
+        "angle_accuracy": {
+          "FL": 0.459184,
+          "FR": 0.377551,
+          "HL": 0.647959,
+          "HR": 0.576531,
+          "S": 0.744898
+        }
+      }
+    },
+    "densenet201": {
+      "short_name": "DenseNet201",
+      "name": "DenseNet201 (ImageNet Transfer Learning)",
+      "is_paper_comparison": true,
+      "checkpoint": "checkpoints/densenet201_multicultural.pt",
+      "checkpoint_mb": 71.323,
+      "n_parameters": 18347911,
+      "macs": 1400889792,
+      "input": "xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7",
+      "eval_mode": "single_view",
+      "val_macro_f1_ckpt": 0.610871,
+      "latency_cpu": {
+        "ms_per_image": 71.94,
+        "ms_median": 70.823,
+        "ms_p95": 81.546,
+        "fps": 13.9,
+        "n_runs": 30
+      },
+      "latency_gpu": {
+        "ms_per_image": 25.444,
+        "ms_median": 25.805,
+        "ms_p95": 31.717,
+        "fps": 39.3,
+        "n_runs": 80
+      },
+      "metrics": {
+        "n_samples": 4875,
+        "n_correct": 3145,
+        "accuracy": 0.645128,
+        "macro_precision": 0.639669,
+        "weighted_precision": 0.647753,
+        "macro_recall": 0.636544,
+        "weighted_recall": 0.645128,
+        "macro_f1": 0.637755,
+        "weighted_f1": 0.646096,
+        "macro_specificity": 0.9401,
+        "roc_auc_ovr_macro": 0.890722,
+        "roc_auc_ovr_weighted": 0.892298,
+        "recall_spread": 0.3212,
+        "per_class_precision": {
+          "angry": 0.5507,
+          "disgust": 0.6667,
+          "fear": 0.5173,
+          "happy": 0.8523,
+          "neutral": 0.6133,
+          "sad": 0.5012,
+          "surprise": 0.7761
+        },
+        "per_class_recall": {
+          "angry": 0.523,
+          "disgust": 0.6778,
+          "fear": 0.5253,
+          "happy": 0.8366,
+          "neutral": 0.658,
+          "sad": 0.5154,
+          "surprise": 0.7197
+        },
+        "per_class_f1": {
+          "angry": 0.5365,
+          "disgust": 0.6722,
+          "fear": 0.5213,
+          "happy": 0.8444,
+          "neutral": 0.6349,
+          "sad": 0.5082,
+          "surprise": 0.7469
+        },
+        "per_class_specificity": {
+          "angry": 0.9314,
+          "disgust": 0.9825,
+          "fear": 0.9162,
+          "happy": 0.9586,
+          "neutral": 0.9173,
+          "sad": 0.9026,
+          "surprise": 0.9721
+        },
+        "per_class_auc": {
+          "angry": 0.8558,
+          "disgust": 0.9117,
+          "fear": 0.8426,
+          "happy": 0.9617,
+          "neutral": 0.8902,
+          "sad": 0.8352,
+          "surprise": 0.9378
+        },
+        "confusion_matrix": [
+          [
+            353,
+            36,
+            75,
+            32,
+            66,
+            103,
+            10
+          ],
+          [
+            31,
+            162,
+            10,
+            7,
+            5,
+            22,
+            2
+          ],
+          [
+            71,
+            17,
+            374,
+            18,
+            53,
+            110,
+            69
+          ],
+          [
+            31,
+            11,
+            26,
+            906,
+            46,
+            44,
+            19
+          ],
+          [
+            53,
+            4,
+            56,
+            48,
+            533,
+            105,
+            11
+          ],
+          [
+            82,
+            13,
+            103,
+            30,
+            140,
+            401,
+            9
+          ],
+          [
+            20,
+            0,
+            79,
+            22,
+            26,
+            15,
+            416
+          ]
+        ],
+        "per_source": {
+          "kdef": {
+            "n_samples": 980,
+            "n_correct": 694,
+            "accuracy": 0.708163,
+            "macro_f1": 0.710556,
+            "weighted_f1": 0.710556,
+            "roc_auc_ovr_macro": 0.928366,
+            "per_class_recall": {
+              "angry": 0.5714,
+              "disgust": 0.75,
+              "fear": 0.6,
+              "happy": 0.9,
+              "neutral": 0.7857,
+              "sad": 0.5857,
+              "surprise": 0.7643
+            },
+            "per_class_f1": {
+              "angry": 0.6107,
+              "disgust": 0.7368,
+              "fear": 0.5657,
+              "happy": 0.9299,
+              "neutral": 0.7746,
+              "sad": 0.5636,
+              "surprise": 0.7926
+            }
+          },
+          "radiate": {
+            "n_samples": 306,
+            "n_correct": 189,
+            "accuracy": 0.617647,
+            "macro_f1": 0.607457,
+            "weighted_f1": 0.620177,
+            "roc_auc_ovr_macro": 0.905536,
+            "per_class_recall": {
+              "angry": 0.5455,
+              "disgust": 0.6364,
+              "fear": 0.6818,
+              "happy": 0.6719,
+              "neutral": 0.7045,
+              "sad": 0.4773,
+              "surprise": 0.5455
+            },
+            "per_class_f1": {
+              "angry": 0.5393,
+              "disgust": 0.6292,
+              "fear": 0.6742,
+              "happy": 0.7478,
+              "neutral": 0.6263,
+              "sad": 0.4773,
+              "surprise": 0.5581
+            }
+          },
+          "fer2013": {
+            "n_samples": 3589,
+            "n_correct": 2262,
+            "accuracy": 0.630259,
+            "macro_f1": 0.604272,
+            "weighted_f1": 0.630614,
+            "roc_auc_ovr_macro": 0.874166,
+            "per_class_recall": {
+              "angry": 0.5071,
+              "disgust": 0.5273,
+              "fear": 0.4924,
+              "happy": 0.8385,
+              "neutral": 0.6262,
+              "sad": 0.5017,
+              "surprise": 0.7139
+            },
+            "per_class_f1": {
+              "angry": 0.5161,
+              "disgust": 0.537,
+              "fear": 0.4957,
+              "happy": 0.8375,
+              "neutral": 0.6049,
+              "sad": 0.4971,
+              "surprise": 0.7416
+            }
+          }
+        },
+        "per_ethnic_group": {
+          "KDEF": {
+            "n_samples": 980,
+            "n_correct": 694,
+            "accuracy": 0.708163,
+            "macro_f1": 0.710556
+          },
+          "B": {
+            "n_samples": 112,
+            "n_correct": 62,
+            "accuracy": 0.553571,
+            "macro_f1": 0.525665
+          },
+          "A": {
+            "n_samples": 56,
+            "n_correct": 32,
+            "accuracy": 0.571429,
+            "macro_f1": 0.52275
+          },
+          "H": {
+            "n_samples": 56,
+            "n_correct": 35,
+            "accuracy": 0.625,
+            "macro_f1": 0.657323
+          },
+          "W": {
+            "n_samples": 82,
+            "n_correct": 60,
+            "accuracy": 0.731707,
+            "macro_f1": 0.728262
+          },
+          "FER": {
+            "n_samples": 3589,
+            "n_correct": 2262,
+            "accuracy": 0.630259,
+            "macro_f1": 0.604272
+          }
+        },
+        "per_gender": {
+          "female": {
+            "n_samples": 783,
+            "accuracy": 0.655172,
+            "macro_f1": 0.658725
+          },
+          "male": {
+            "n_samples": 503,
+            "accuracy": 0.735586,
+            "macro_f1": 0.736259
+          }
+        },
+        "angle_accuracy": {
+          "FL": 0.602041,
+          "FR": 0.668367,
+          "HL": 0.77551,
+          "HR": 0.72449,
+          "S": 0.770408
+        }
+      }
+    },
+    "resnet50": {
+      "short_name": "ResNet50",
+      "name": "ResNet50 (ImageNet Transfer Learning)",
+      "is_paper_comparison": true,
+      "checkpoint": "checkpoints/resnet50_multicultural.pt",
+      "checkpoint_mb": 91.035,
+      "n_parameters": 23779399,
+      "macs": 1334845888,
+      "input": "xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7",
+      "eval_mode": "single_view",
+      "val_macro_f1_ckpt": 0.650525,
+      "latency_cpu": {
+        "ms_per_image": 22.653,
+        "ms_median": 22.821,
+        "ms_p95": 24.398,
+        "fps": 44.1,
+        "n_runs": 30
+      },
+      "latency_gpu": {
+        "ms_per_image": 5.356,
+        "ms_median": 5.139,
+        "ms_p95": 8.44,
+        "fps": 186.7,
+        "n_runs": 80
+      },
+      "metrics": {
+        "n_samples": 4875,
+        "n_correct": 3267,
+        "accuracy": 0.670154,
+        "macro_precision": 0.659709,
+        "weighted_precision": 0.669296,
+        "macro_recall": 0.662664,
+        "weighted_recall": 0.670154,
+        "macro_f1": 0.660653,
+        "weighted_f1": 0.669283,
+        "macro_specificity": 0.944357,
+        "roc_auc_ovr_macro": 0.909812,
+        "roc_auc_ovr_weighted": 0.909585,
+        "recall_spread": 0.3665,
+        "per_class_precision": {
+          "angry": 0.605,
+          "disgust": 0.6718,
+          "fear": 0.5396,
+          "happy": 0.8631,
+          "neutral": 0.6397,
+          "sad": 0.5305,
+          "surprise": 0.7682
+        },
+        "per_class_recall": {
+          "angry": 0.5719,
+          "disgust": 0.728,
+          "fear": 0.507,
+          "happy": 0.8735,
+          "neutral": 0.6926,
+          "sad": 0.5373,
+          "surprise": 0.7284
+        },
+        "per_class_f1": {
+          "angry": 0.588,
+          "disgust": 0.6988,
+          "fear": 0.5228,
+          "happy": 0.8683,
+          "neutral": 0.6651,
+          "sad": 0.5338,
+          "surprise": 0.7478
+        },
+        "per_class_specificity": {
+          "angry": 0.94,
+          "disgust": 0.9817,
+          "fear": 0.926,
+          "happy": 0.9604,
+          "neutral": 0.9223,
+          "sad": 0.9097,
+          "surprise": 0.9704
+        },
+        "per_class_auc": {
+          "angry": 0.8706,
+          "disgust": 0.9457,
+          "fear": 0.8518,
+          "happy": 0.9691,
+          "neutral": 0.9117,
+          "sad": 0.8711,
+          "surprise": 0.9488
+        },
+        "confusion_matrix": [
+          [
+            386,
+            34,
+            77,
+            20,
+            58,
+            85,
+            15
+          ],
+          [
+            26,
+            174,
+            7,
+            8,
+            4,
+            18,
+            2
+          ],
+          [
+            71,
+            8,
+            361,
+            23,
+            59,
+            122,
+            68
+          ],
+          [
+            25,
+            7,
+            16,
+            946,
+            43,
+            26,
+            20
+          ],
+          [
+            44,
+            4,
+            40,
+            40,
+            561,
+            109,
+            12
+          ],
+          [
+            73,
+            29,
+            84,
+            30,
+            134,
+            418,
+            10
+          ],
+          [
+            13,
+            3,
+            84,
+            29,
+            18,
+            10,
+            421
+          ]
+        ],
+        "per_source": {
+          "kdef": {
+            "n_samples": 980,
+            "n_correct": 768,
+            "accuracy": 0.783673,
+            "macro_f1": 0.783342,
+            "weighted_f1": 0.783342,
+            "roc_auc_ovr_macro": 0.956969,
+            "per_class_recall": {
+              "angry": 0.6643,
+              "disgust": 0.8214,
+              "fear": 0.6714,
+              "happy": 0.95,
+              "neutral": 0.8643,
+              "sad": 0.7071,
+              "surprise": 0.8071
+            },
+            "per_class_f1": {
+              "angry": 0.7266,
+              "disgust": 0.8042,
+              "fear": 0.6643,
+              "happy": 0.9568,
+              "neutral": 0.8203,
+              "sad": 0.6923,
+              "surprise": 0.8188
+            }
+          },
+          "radiate": {
+            "n_samples": 306,
+            "n_correct": 213,
+            "accuracy": 0.696078,
+            "macro_f1": 0.669816,
+            "weighted_f1": 0.693091,
+            "roc_auc_ovr_macro": 0.92193,
+            "per_class_recall": {
+              "angry": 0.6818,
+              "disgust": 0.7045,
+              "fear": 0.75,
+              "happy": 0.8906,
+              "neutral": 0.6818,
+              "sad": 0.5,
+              "surprise": 0.4545
+            },
+            "per_class_f1": {
+              "angry": 0.6522,
+              "disgust": 0.6739,
+              "fear": 0.7416,
+              "happy": 0.8837,
+              "neutral": 0.6667,
+              "sad": 0.5301,
+              "surprise": 0.5405
+            }
+          },
+          "fer2013": {
+            "n_samples": 3589,
+            "n_correct": 2286,
+            "accuracy": 0.636946,
+            "macro_f1": 0.598282,
+            "weighted_f1": 0.635891,
+            "roc_auc_ovr_macro": 0.890151,
+            "per_class_recall": {
+              "angry": 0.5356,
+              "disgust": 0.5091,
+              "fear": 0.4432,
+              "happy": 0.8601,
+              "neutral": 0.655,
+              "sad": 0.5,
+              "surprise": 0.7163
+            },
+            "per_class_f1": {
+              "angry": 0.5451,
+              "disgust": 0.4667,
+              "fear": 0.4638,
+              "happy": 0.8533,
+              "neutral": 0.6298,
+              "sad": 0.4962,
+              "surprise": 0.7331
+            }
+          }
+        },
+        "per_ethnic_group": {
+          "KDEF": {
+            "n_samples": 980,
+            "n_correct": 768,
+            "accuracy": 0.783673,
+            "macro_f1": 0.783342
+          },
+          "B": {
+            "n_samples": 112,
+            "n_correct": 79,
+            "accuracy": 0.705357,
+            "macro_f1": 0.660161
+          },
+          "A": {
+            "n_samples": 56,
+            "n_correct": 34,
+            "accuracy": 0.607143,
+            "macro_f1": 0.561894
+          },
+          "H": {
+            "n_samples": 56,
+            "n_correct": 42,
+            "accuracy": 0.75,
+            "macro_f1": 0.662506
+          },
+          "W": {
+            "n_samples": 82,
+            "n_correct": 58,
+            "accuracy": 0.707317,
+            "macro_f1": 0.703246
+          },
+          "FER": {
+            "n_samples": 3589,
+            "n_correct": 2286,
+            "accuracy": 0.636946,
+            "macro_f1": 0.598282
+          }
+        },
+        "per_gender": {
+          "female": {
+            "n_samples": 783,
+            "accuracy": 0.726692,
+            "macro_f1": 0.725491
+          },
+          "male": {
+            "n_samples": 503,
+            "accuracy": 0.819085,
+            "macro_f1": 0.81681
+          }
+        },
+        "angle_accuracy": {
+          "FL": 0.678571,
+          "FR": 0.719388,
+          "HL": 0.836735,
+          "HR": 0.816327,
+          "S": 0.867347
+        }
+      }
+    },
+    "efficientnet_b4": {
+      "short_name": "EfficientNetB4",
+      "name": "EfficientNetB4 (ImageNet Transfer Learning)",
+      "is_paper_comparison": true,
+      "checkpoint": "checkpoints/efficientnet_b4_multicultural.pt",
+      "checkpoint_mb": 68.61,
+      "n_parameters": 17787215,
+      "macs": 492759840,
+      "input": "xám 128x128 lặp 3 kênh RGB, chuẩn hóa ImageNet, GAP->128->64->Drop(0.7)->7",
+      "eval_mode": "single_view",
+      "val_macro_f1_ckpt": 0.525309,
+      "latency_cpu": {
+        "ms_per_image": 42.279,
+        "ms_median": 43.022,
+        "ms_p95": 50.921,
+        "fps": 23.7,
+        "n_runs": 30
+      },
+      "latency_gpu": {
+        "ms_per_image": 13.484,
+        "ms_median": 13.045,
+        "ms_p95": 17.501,
+        "fps": 74.2,
+        "n_runs": 80
+      },
+      "metrics": {
+        "n_samples": 4875,
+        "n_correct": 2698,
+        "accuracy": 0.553436,
+        "macro_precision": 0.531503,
+        "weighted_precision": 0.552007,
+        "macro_recall": 0.53665,
+        "weighted_recall": 0.553436,
+        "macro_f1": 0.530858,
+        "weighted_f1": 0.549993,
+        "macro_specificity": 0.9246,
+        "roc_auc_ovr_macro": 0.868333,
+        "roc_auc_ovr_weighted": 0.866595,
+        "recall_spread": 0.4833,
+        "per_class_precision": {
+          "angry": 0.4545,
+          "disgust": 0.4343,
+          "fear": 0.4346,
+          "happy": 0.7487,
+          "neutral": 0.5258,
+          "sad": 0.427,
+          "surprise": 0.6955
+        },
+        "per_class_recall": {
+          "angry": 0.4815,
+          "disgust": 0.5397,
+          "fear": 0.3034,
+          "happy": 0.7867,
+          "neutral": 0.5778,
+          "sad": 0.455,
+          "surprise": 0.6125
+        },
+        "per_class_f1": {
+          "angry": 0.4676,
+          "disgust": 0.4813,
+          "fear": 0.3573,
+          "happy": 0.7672,
+          "neutral": 0.5506,
+          "sad": 0.4406,
+          "surprise": 0.6513
+        },
+        "per_class_specificity": {
+          "angry": 0.9071,
+          "disgust": 0.9638,
+          "fear": 0.9325,
+          "happy": 0.9246,
+          "neutral": 0.8962,
+          "sad": 0.8841,
+          "surprise": 0.9639
+        },
+        "per_class_auc": {
+          "angry": 0.8241,
+          "disgust": 0.9218,
+          "fear": 0.7896,
+          "happy": 0.9413,
+          "neutral": 0.8668,
+          "sad": 0.8081,
+          "surprise": 0.9266
+        },
+        "confusion_matrix": [
+          [
+            325,
+            48,
+            41,
+            62,
+            83,
+            102,
+            14
+          ],
+          [
+            57,
+            129,
+            12,
+            10,
+            4,
+            22,
+            5
+          ],
+          [
+            94,
+            25,
+            216,
+            55,
+            97,
+            135,
+            90
+          ],
+          [
+            50,
+            28,
+            30,
+            852,
+            49,
+            54,
+            20
+          ],
+          [
+            70,
+            10,
+            45,
+            62,
+            468,
+            140,
+            15
+          ],
+          [
+            90,
+            50,
+            67,
+            55,
+            151,
+            354,
+            11
+          ],
+          [
+            29,
+            7,
+            86,
+            42,
+            38,
+            22,
+            354
+          ]
+        ],
+        "per_source": {
+          "kdef": {
+            "n_samples": 980,
+            "n_correct": 522,
+            "accuracy": 0.532653,
+            "macro_f1": 0.53141,
+            "weighted_f1": 0.53141,
+            "roc_auc_ovr_macro": 0.867863,
+            "per_class_recall": {
+              "angry": 0.5429,
+              "disgust": 0.6286,
+              "fear": 0.3,
+              "happy": 0.6143,
+              "neutral": 0.5714,
+              "sad": 0.4214,
+              "surprise": 0.65
+            },
+            "per_class_f1": {
+              "angry": 0.4967,
+              "disgust": 0.5399,
+              "fear": 0.37,
+              "happy": 0.6772,
+              "neutral": 0.5479,
+              "sad": 0.414,
+              "surprise": 0.6741
+            }
+          },
+          "radiate": {
+            "n_samples": 306,
+            "n_correct": 156,
+            "accuracy": 0.509804,
+            "macro_f1": 0.491941,
+            "weighted_f1": 0.513837,
+            "roc_auc_ovr_macro": 0.882688,
+            "per_class_recall": {
+              "angry": 0.3636,
+              "disgust": 0.5909,
+              "fear": 0.3864,
+              "happy": 0.7188,
+              "neutral": 0.5455,
+              "sad": 0.3636,
+              "surprise": 0.5
+            },
+            "per_class_f1": {
+              "angry": 0.4051,
+              "disgust": 0.4483,
+              "fear": 0.425,
+              "happy": 0.7603,
+              "neutral": 0.5926,
+              "sad": 0.381,
+              "surprise": 0.4314
+            }
+          },
+          "fer2013": {
+            "n_samples": 3589,
+            "n_correct": 2020,
+            "accuracy": 0.562831,
+            "macro_f1": 0.509758,
+            "weighted_f1": 0.55714,
+            "roc_auc_ovr_macro": 0.860861,
+            "per_class_recall": {
+              "angry": 0.4745,
+              "disgust": 0.2727,
+              "fear": 0.2973,
+              "happy": 0.8191,
+              "neutral": 0.5815,
+              "sad": 0.4697,
+              "surprise": 0.6058
+            },
+            "per_class_f1": {
+              "angry": 0.4637,
+              "disgust": 0.3191,
+              "fear": 0.3481,
+              "happy": 0.7801,
+              "neutral": 0.5486,
+              "sad": 0.4507,
+              "surprise": 0.658
+            }
+          }
+        },
+        "per_ethnic_group": {
+          "KDEF": {
+            "n_samples": 980,
+            "n_correct": 522,
+            "accuracy": 0.532653,
+            "macro_f1": 0.53141
+          },
+          "B": {
+            "n_samples": 112,
+            "n_correct": 48,
+            "accuracy": 0.428571,
+            "macro_f1": 0.402369
+          },
+          "A": {
+            "n_samples": 56,
+            "n_correct": 31,
+            "accuracy": 0.553571,
+            "macro_f1": 0.534687
+          },
+          "H": {
+            "n_samples": 56,
+            "n_correct": 27,
+            "accuracy": 0.482143,
+            "macro_f1": 0.455727
+          },
+          "W": {
+            "n_samples": 82,
+            "n_correct": 50,
+            "accuracy": 0.609756,
+            "macro_f1": 0.582428
+          },
+          "FER": {
+            "n_samples": 3589,
+            "n_correct": 2020,
+            "accuracy": 0.562831,
+            "macro_f1": 0.509758
+          }
+        },
+        "per_gender": {
+          "female": {
+            "n_samples": 783,
+            "accuracy": 0.485313,
+            "macro_f1": 0.483359
+          },
+          "male": {
+            "n_samples": 503,
+            "accuracy": 0.592445,
+            "macro_f1": 0.591925
+          }
+        },
+        "angle_accuracy": {
+          "FL": 0.362245,
+          "FR": 0.357143,
+          "HL": 0.637755,
+          "HR": 0.596939,
+          "S": 0.709184
+        }
+      }
+    },
     "hog_svm": {
+      "short_name": "HOG + SVM",
       "name": "HOG + SVM (LinearSVC)",
+      "is_paper_comparison": false,
       "checkpoint": "checkpoints/hog_svm_multicultural.pkl",
       "checkpoint_mb": 0.103,
       "n_parameters": 20419,
       "macs": 20412,
-      "input": "HOG 160x160, ô 16, 9 hướng -> 2916 chiều, C=0.0002, class_weight={0: 0.9373, 1: 1.5803, 2: 0.9297, 3: 0.7717, 4: 0.8718, 5: 0.8796, 6: 1.0296}",
+      "input": "HOG 160x160, ô 16, 9 hướng -> 2916 chiều, C=0.0002",
       "eval_mode": "single_view",
       "val_macro_f1_ckpt": 0.421009,
       "latency_cpu": {
-        "ms_per_image": 0.434,
-        "ms_median": 0.415,
-        "ms_p95": 0.519,
-        "fps": 2302.0,
-        "n_runs": 300
+        "ms_per_image": 0.432,
+        "ms_median": 0.412,
+        "ms_p95": 0.526,
+        "fps": 2316.2,
+        "n_runs": 100
       },
       "latency_gpu": null,
       "metrics": {
         "n_samples": 4875,
         "n_correct": 2173,
         "accuracy": 0.445744,
+        "macro_precision": 0.411362,
+        "weighted_precision": 0.425733,
+        "macro_recall": 0.436494,
+        "weighted_recall": 0.445744,
         "macro_f1": 0.415915,
         "weighted_f1": 0.428376,
+        "macro_specificity": 0.905886,
         "roc_auc_ovr_macro": 0.79424,
         "roc_auc_ovr_weighted": 0.786358,
         "recall_spread": 0.5656,
@@ -336,6 +2094,15 @@
           "neutral": 0.43,
           "sad": 0.2949,
           "surprise": 0.5501
+        },
+        "per_class_specificity": {
+          "angry": 0.9164,
+          "disgust": 0.9515,
+          "fear": 0.938,
+          "happy": 0.8468,
+          "neutral": 0.8723,
+          "sad": 0.8921,
+          "surprise": 0.9241
         },
         "per_class_auc": {
           "angry": 0.7455,
@@ -551,7 +2318,9 @@
       }
     },
     "resnet18": {
+      "short_name": "ResNet-18",
       "name": "ResNet-18 (IMAGENET1K_V1)",
+      "is_paper_comparison": false,
       "checkpoint": "checkpoints/resnet18_multicultural.pt",
       "checkpoint_mb": 42.733,
       "n_parameters": 11180103,
@@ -560,25 +2329,30 @@
       "eval_mode": "single_view",
       "val_macro_f1_ckpt": 0.728414,
       "latency_cpu": {
-        "ms_per_image": 13.895,
-        "ms_median": 13.619,
-        "ms_p95": 15.436,
-        "fps": 72.0,
-        "n_runs": 300
+        "ms_per_image": 12.828,
+        "ms_median": 12.06,
+        "ms_p95": 16.201,
+        "fps": 78.0,
+        "n_runs": 60
       },
       "latency_gpu": {
-        "ms_per_image": 1.986,
-        "ms_median": 1.919,
-        "ms_p95": 2.293,
-        "fps": 503.5,
-        "n_runs": 300
+        "ms_per_image": 1.99,
+        "ms_median": 1.875,
+        "ms_p95": 3.143,
+        "fps": 502.6,
+        "n_runs": 100
       },
       "metrics": {
         "n_samples": 4875,
         "n_correct": 3621,
         "accuracy": 0.742769,
+        "macro_precision": 0.737675,
+        "weighted_precision": 0.741062,
+        "macro_recall": 0.740769,
+        "weighted_recall": 0.742769,
         "macro_f1": 0.738149,
         "weighted_f1": 0.740832,
+        "macro_specificity": 0.956571,
         "roc_auc_ovr_macro": 0.949169,
         "roc_auc_ovr_weighted": 0.947764,
         "recall_spread": 0.3612,
@@ -608,6 +2382,15 @@
           "neutral": 0.7398,
           "sad": 0.6306,
           "surprise": 0.8225
+        },
+        "per_class_specificity": {
+          "angry": 0.9533,
+          "disgust": 0.9884,
+          "fear": 0.9472,
+          "happy": 0.9715,
+          "neutral": 0.9323,
+          "sad": 0.927,
+          "surprise": 0.9763
         },
         "per_class_auc": {
           "angry": 0.9244,
