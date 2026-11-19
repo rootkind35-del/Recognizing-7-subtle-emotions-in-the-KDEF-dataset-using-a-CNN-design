@@ -707,6 +707,7 @@ class TrainConfig:
     warmup_epochs: int = 3
     patience: int = 12
     batch_size: int = 64
+    grad_accum_steps: int = 1
     lr: float = 1e-3
     min_lr: float = 1e-6
     weight_decay: float = 3e-4
@@ -894,11 +895,13 @@ def train_cnn_run(
         tr_preds_all: List[np.ndarray] = []
         tr_targets_all: List[np.ndarray] = []
         use_mix = (cfg.mix_prob > 0.0) and (cfg.mix_start_epoch <= ep <= cfg.mix_end_epoch)
+        accum = max(1, int(getattr(cfg, "grad_accum_steps", 1))) if not cfg.use_sam else 1
+        batch_slices = [perm[s : s + bs] for s in range(0, n_train, bs) if perm[s : s + bs].numel() > 1]
+        n_batches = len(batch_slices)
+        if not cfg.use_sam:
+            optimizer.zero_grad(set_to_none=True)
 
-        for start in range(0, n_train, bs):
-            idx = perm[start : start + bs]
-            if idx.numel() <= 1:
-                continue
+        for b_idx, idx in enumerate(batch_slices):
             xb = gpu_augment_batch(
                 train_x_u8_dev[idx],
                 mean_v=cfg.mean,
@@ -944,15 +947,19 @@ def train_cnn_run(
                 optimizer.second_step(zero_grad=True)
                 b_loss = float(loss1.detach().item())
             else:
-                optimizer.zero_grad(set_to_none=True)
                 loss1, l1_det = _forward_loss(xb_in, yb, y_soft, was_mixed)
-                loss1.backward()
-                if cfg.grad_clip > 0:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.grad_clip)
-                optimizer.step()
+                (loss1 / float(accum)).backward()
+                is_step = ((b_idx + 1) % accum == 0) or (b_idx + 1 == n_batches)
+                if is_step:
+                    if cfg.grad_clip > 0:
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.grad_clip)
+                    optimizer.step()
+                    optimizer.zero_grad(set_to_none=True)
+                    if ema is not None:
+                        ema.update(model)
                 b_loss = float(loss1.detach().item())
 
-            if ema is not None:
+            if cfg.use_sam and ema is not None:
                 ema.update(model)
 
             total_loss += b_loss * xb.size(0)

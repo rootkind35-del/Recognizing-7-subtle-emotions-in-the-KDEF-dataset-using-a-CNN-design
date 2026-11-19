@@ -104,11 +104,10 @@ def main() -> None:
         st.header("Về mô hình")
         st.markdown(
             """
-            **KDEF_Stem2Ch_MS4_Symmetric (PTA)**
-            - Mạng nơ-ron tích chập 4 khối đa tỉ lệ đối xứng (1,27 triệu tham số, ~5,0 MB).
+            **KDEF_Stem2Ch_MS4_Symmetric (v2_res)**
+            - Mạng nơ-ron tích chập 4 khối đa tỉ lệ đối xứng + Residual Skips (1,35 triệu tham số, ~5,19 MB).
             - Ảnh đầu vào: Xám 160×160 + CLAHE.
-            - Phép nhân-cộng: ~1,32 tỉ FLOPs/ảnh.
-            - Tốc độ suy luận CPU: ~19 ms/ảnh (~52 FPS).
+            - Tốc độ suy luận CPU: ~17,3 ms/ảnh (~58 FPS).
             """
         )
         st.markdown("---")
@@ -128,9 +127,9 @@ def main() -> None:
         st.markdown(
             """
             *Tập test độc lập 4.875 ảnh (người chưa từng gặp):*
-            - **Accuracy:** **73,05%** (KDEF 85,5%, RADIATE 83,0%, FER 68,8%)
-            - **Macro-F1:** **72,60%** (Vượt HOG+SVM +32,0% và ResNet-18 +0,15%)
-            - **ROC-AUC (OvR macro):** **0,9437**
+            - **Accuracy:** **73,39%** (KDEF 86,5%, RADIATE 85,0%, FER 68,8%)
+            - **Macro-F1:** **72,82%** (Vượt HOG+SVM +31,2% với kích thước nhẹ hơn ResNet-18 ~8,3×)
+            - **ROC-AUC (OvR macro):** **0,9450**
             """
         )
         st.info("💡 **Mẹo:** Dùng ảnh chụp góc gần chính diện, khuôn mặt rõ nét và đủ sáng để đạt kết quả tốt nhất.")

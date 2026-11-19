@@ -267,6 +267,7 @@ def build_model(
     model_name: str = "stem2ch_ms4_fuse",
     num_classes: int = 7,
     in_channels: int = 1,
+    variant: str = "v1",
 ) -> nn.Module:
     """Khởi tạo kiến trúc chuẩn duy nhất KDEF_Stem2Ch_MS4_Symmetric (`stem2ch_ms4_fuse`)."""
     name = model_name.lower().replace("-", "_")
@@ -277,7 +278,7 @@ def build_model(
         "final",
         "default",
     ):
-        return KDEF_Stem2Ch_MS4_Symmetric(in_channels=in_channels, num_classes=num_classes)
+        return KDEF_Stem2Ch_MS4_Symmetric(in_channels=in_channels, num_classes=num_classes, variant=variant)
     raise ValueError(
         f"Kiến trúc không được hỗ trợ: {model_name}. Chỉ sử dụng 'stem2ch_ms4_fuse' (KDEF_Stem2Ch_MS4_Symmetric)."
     )

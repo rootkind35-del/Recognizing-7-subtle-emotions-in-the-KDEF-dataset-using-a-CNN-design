@@ -2,7 +2,7 @@
 
 Dự án nghiên cứu và triển khai nhận dạng 7 cảm xúc khuôn mặt cơ bản (`angry`, `disgust`, `fear`, `happy`, `neutral`, `sad`, `surprise`) trên bộ dữ liệu khuôn mặt đa văn hóa 3 nguồn gồm **41.269 ảnh sạch** tổng hợp từ **KDEF** (Bắc Âu), **RADIATE** (Đa sắc tộc: Phi, Á, Mỹ Latinh, Âu) và **FER-2013** (Internet thế giới thực), tuân thủ kỷ luật phân chia theo người nghiêm ngặt (**Subject-Disjoint: 32.404 train / 3.990 val / 4.875 test**; 0 rò rỉ dữ liệu).
 
-Hệ thống đề xuất kiến trúc CNN đối xứng đa tỉ lệ chuyên biệt cho khuôn mặt **`KDEF_Stem2Ch_MS4_Symmetric`** (**1.273.005 tham số**, dung lượng tệp **4,89 MB**), đồng thời xây dựng và đối sánh công bằng với 2 mô hình chuẩn mực: **HOG + SVM** (máy học truyền thống) và **ResNet-18** (học chuyển giao ImageNet).
+Hệ thống đề xuất kiến trúc CNN đối xứng đa tỉ lệ chuyên biệt cho khuôn mặt **`KDEF_Stem2Ch_MS4_Symmetric`** (`v2_res`, **1.349.165 tham số**, dung lượng tệp **5,19 MB**), đồng thời xây dựng và đối sánh công bằng với 2 mô hình chuẩn mực: **HOG + SVM** (máy học truyền thống) và **ResNet-18** (học chuyển giao ImageNet).
 
 ---
 
@@ -12,17 +12,17 @@ Toàn bộ 3 mô hình được huấn luyện và tối ưu siêu tham số ch�
 
 | Tiêu chí đánh giá | HOG + SVM (Đối chứng 1) | ResNet-18 ImageNet (Đối chứng 2) | KDEF_Stem2Ch_MS4_Symmetric (Mô hình đề xuất) | So sánh Mô hình đề xuất vs ResNet-18 |
 |---|---:|---:|---:|:---:|
-| **Số tham số** | **56.707** (~0,057M) | **11.180.103** (~11,18M) | **1.273.005** (~1,27M) | **Nhẹ hơn ~8,8 lần** |
-| **Dung lượng tệp mô hình** | **0,28 MB** | **42,73 MB** | **4,89 MB** | **Nhỏ hơn ~8,7 lần** |
-| **Độ chính xác (Accuracy)** | **43,12%** | **72,78%** | **73,05%** | **+0,27%** |
-| **Macro-F1 (Trung bình 7 lớp)**| **40,58%** | **72,45%** | **72,60%** | **+0,15%** |
-| **Weighted-F1** | **42,10%** | **72,70%** | **72,89%** | **+0,19%** |
-| **ROC-AUC (OvR Macro)** | **0,7878** | **0,9255** | **0,9437** | **+0,0182** *(Vượt trội)* |
-| **Accuracy KDEF (980 ảnh)** | **41,63%** | **85,41%** | **85,51%** | **+0,10%** |
-| **Accuracy RADIATE (306 ảnh)**| **37,58%** | **79,09%** | **83,01%** | **+3,92%** *(Vượt trội đa sắc tộc)* |
-| **Accuracy FER-2013 (3.589 ảnh)**| **44,00%** | **68,79%** | **68,79%** | Ngang bằng |
-| **Thời gian suy luận CPU** | **0,50 ms** (1.988 FPS) | **16,52 ms** (60 FPS) | **19,09 ms** (52 FPS) | Chuẩn thời gian thực (> 50 FPS) |
-| **Thời gian suy luận GPU** | – (chỉ CPU) | **2,33 ms** (429 FPS) | **1,84 ms** (545 FPS) | **Nhanh hơn 27% trên GPU** |
+| **Số tham số** | **20.419** (~0,020M) | **11.180.103** (~11,18M) | **1.349.165** (~1,35M) | **Nhẹ hơn ~8,3 lần** |
+| **Dung lượng tệp mô hình** | **0,10 MB** | **42,73 MB** | **5,19 MB** | **Nhỏ hơn ~8,2 lần** |
+| **Độ chính xác (Accuracy)** | **44,57%** | **74,28%** | **73,39%** | −0,89% *(không dùng ImageNet)* |
+| **Macro-F1 (Trung bình 7 lớp)**| **41,59%** | **73,81%** | **72,82%** | −0,99% *(không dùng ImageNet)* |
+| **Weighted-F1** | **42,84%** | **74,08%** | **73,33%** | −0,75% |
+| **ROC-AUC (OvR Macro)** | **0,7942** | **0,9492** | **0,9450** | Gần tương đương |
+| **Accuracy KDEF (980 ảnh)** | **41,12%** | **87,35%** | **86,53%** | −0,82% |
+| **Accuracy RADIATE (306 ảnh)**| **40,85%** | **84,31%** | **84,97%** | **+0,66%** *(Vượt trội đa sắc tộc)* |
+| **Accuracy FER-2013 (3.589 ảnh)**| **45,83%** | **69,85%** | **68,82%** | −1,03% |
+| **Thời gian suy luận CPU** | **0,43 ms** (2.302 FPS) | **13,90 ms** (72 FPS) | **17,32 ms** (58 FPS) | Chuẩn thời gian thực (> 50 FPS) |
+| **Thời gian suy luận GPU** | – (chỉ CPU) | **1,99 ms** (504 FPS) | **2,15 ms** (465 FPS) | Chuẩn thời gian thực (> 460 FPS) |
 
 ### Hình ảnh đối sánh kết quả trực quan
 
@@ -91,7 +91,7 @@ Mô hình **`KDEF_Stem2Ch_MS4_Symmetric`** (`src/models/model.py`, tên mã `ste
    - $\text{Conv } 1\times3$ (64 kênh): Kernel định hướng **ngang** (kéo khóe môi khi cười, mím môi khi giận).
    - $\text{Conv } 3\times1$ (64 kênh): Kernel định hướng **dọc** (nếp nhăn rãnh mũi - má, nhíu trán, há cằm).
    - $\text{Conv } 3\times3 \text{ Dilation } d=2$ (96 kênh): Vùng đón nhận mở rộng tương đương $7\times7$, thu nhận mối tương quan toàn thể giữa các vùng biểu cảm.
-   - *Tính đối xứng gương (Flip-Equivariant):* Cặp kernel $(1\times3)$ và $(3\times1)$ giúp mạng duy trì độ chính xác ổn định trên cả góc nghiêng trái và phải (độ lệch $|\text{FL} - \text{FR}|$ chỉ $3,6\%$).
+   - *Tính đối xứng gương (Flip-Equivariant):* Cặp kernel $(1\times3)$ và $(3\times1)$ giúp mạng duy trì độ chính xác ổn định trên cả góc nghiêng trái và phải (độ lệch $|\text{FL} - \text{FR}|$ chỉ $1,5\%$).
 4. **Upper/Lower Facial Strip Pooling (`AdaptiveAvgPool2d((2, 1))`):** Thay vì nén toàn bộ mặt thành 1 điểm như GAP $(1\times1)$, cấu trúc chia bản đồ đặc trưng thành 2 dải dọc:
    - Dải trên: Vùng Mắt - Mày (AU1, AU2, AU4, AU5 — đặc trưng cho *sợ hãi, ngạc nhiên, giận dữ*).
    - Dải dưới: Vùng Mũi - Miệng - Cằm (AU12, AU15, AU20, AU26 — đặc trưng cho *vui vẻ, ghê tởm, buồn*).
@@ -103,13 +103,13 @@ Mô hình **`KDEF_Stem2Ch_MS4_Symmetric`** (`src/models/model.py`, tên mã `ste
 ## 3. Nhận Xét Khoa Học Khách Quan
 
 1. **Hiệu quả của thiên kiến quy nạp miền chuyên biệt (Domain Inductive Bias):**
-   Mặc dù `ResNet-18` có số lượng tham số gấp gần 9 lần (11,18M so với 1,27M) và thừa hưởng tri thức từ 1,28 triệu ảnh ImageNet, mô hình đề xuất `KDEF_Stem2Ch_MS4_Symmetric` vẫn đạt kết quả phân loại cao hơn (**73,05% so với 72,78% Accuracy**, **0,9437 so với 0,9255 ROC-AUC**). Điều này khẳng định việc thiết kế các khối tích chập bất đối xứng $(1\times3, 3\times1)$ và Strip Pooling $2\times1$ mô phỏng đúng giải phẫu cơ mặt có hiệu quả vượt trội hơn so với việc sử dụng một mạng nơ-ron đa dụng tổng quát.
+   Mặc dù `ResNet-18` có số lượng tham số gấp **8,3 lần** (11,18M so với 1,35M) và thừa hưởng tri thức từ 1,28 triệu ảnh ImageNet-1K, mô hình đề xuất `KDEF_Stem2Ch_MS4_Symmetric` (`v2_res`, huấn luyện từ đầu không dùng tiền huấn luyện ngoài) vẫn đạt hiệu năng rất sát sao (**73,39% so với 74,28% Accuracy**, **0,9450 so với 0,9492 ROC-AUC**). Việc kết hợp các khối tích chập bất đối xứng $(1\times3, 3\times1)$, liên kết tắt (residual skips) và Strip Pooling $2\times1$ giúp mạng học hiệu quả đặc trưng giải phẫu cơ mặt với chi phí tham số rất nhỏ.
 2. **Khả năng khái quát hóa đa sắc tộc (Kháng Identity Overfitting):**
-   Trên tập dữ liệu đa sắc tộc RADIATE, mô hình đề xuất vượt trội ResNet-18 tới **+3,92% độ chính xác** (83,01% so với 79,09%). Kích thước 1,27M tham số vừa vặn ngăn ngừa hiện tượng mạng học thuộc khuôn mặt diễn viên, giúp tập trung học các biến dạng cơ biểu cảm chung của nhân loại.
+   Trên tập dữ liệu đa sắc tộc RADIATE, mô hình đề xuất vượt trội ResNet-18 **+0,66% độ chính xác** (**84,97% so với 84,31%**). Kích thước 1,35M tham số vừa vặn hạn chế hiện tượng mạng học thuộc khuôn mặt diễn viên, giúp tập trung học các biến dạng cơ biểu cảm chung.
 3. **Khoảng cách với phương pháp truyền thống:**
-   Mô hình học máy truyền thống `HOG + SVM` chỉ đạt 43,12% Accuracy, kém mô hình CNN tới gần 30% độ chính xác, chứng minh các đặc trưng gradient thủ công không thể thích ứng với sự biến đổi phức tạp của biểu cảm trong điều kiện góc chụp và ánh sáng đa dạng.
+   Mô hình học máy truyền thống `HOG + SVM` (sau tối ưu đặc trưng và L-BFGS còn 20.419 tham số) chỉ đạt **44,57% Accuracy** (**41,59% Macro-F1**), kém mô hình CNN gần 29% độ chính xác, chứng minh các đặc trưng gradient thủ công không thể thích ứng với sự biến đổi phức tạp của biểu cảm trong điều kiện góc chụp và ánh sáng đa dạng.
 4. **Khả năng triển khai thực tế:**
-   Với dung lượng checkpoint chỉ **4,89 MB** và tốc độ đạt **52 FPS trên CPU** thông thường, mô hình hoàn toàn sẵn sàng tích hợp vào các hệ thống thời gian thực qua webcam, trình duyệt hoặc thiết bị nhúng.
+   Với dung lượng checkpoint chỉ **5,19 MB** và tốc độ đạt **58 FPS trên CPU** thông thường (**465 FPS trên GPU**), mô hình hoàn toàn sẵn sàng tích hợp vào các hệ thống thời gian thực qua webcam, trình duyệt hoặc thiết bị nhúng.
 
 ---
 
@@ -120,9 +120,9 @@ Mô hình **`KDEF_Stem2Ch_MS4_Symmetric`** (`src/models/model.py`, tên mã `ste
 │   ├── manifests/multicultural_manifest.csv   # Danh mục 41.269 ảnh sạch (KDEF + RADIATE + FER-2013)
 │   └── NGUON_DU_LIEU.md                       # Bản quyền và thông tin nguồn gốc dữ liệu
 ├── checkpoints/
-│   ├── final_model.pt                         # Trọng số tối ưu KDEF_Stem2Ch_MS4_Symmetric (4,89 MB)
+│   ├── final_model.pt                         # Trọng số tối ưu KDEF_Stem2Ch_MS4_Symmetric (5,19 MB)
 │   ├── resnet18_multicultural.pt              # Trọng số tối ưu ResNet-18 (42,73 MB)
-│   └── hog_svm_multicultural.pkl              # Checkpoint HOG + SVM (0,28 MB)
+│   └── hog_svm_multicultural.pkl              # Checkpoint HOG + SVM (0,10 MB)
 ├── src/
 │   ├── models/
 │   │   ├── model.py                           # Định nghĩa KDEF_Stem2Ch_MS4_Symmetric & AU Block

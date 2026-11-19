@@ -75,7 +75,8 @@ def run_cnn_experiments(args: argparse.Namespace) -> None:
                 epochs=args.epochs,
                 warmup_epochs=4,
                 patience=12,
-                batch_size=128,
+                batch_size=64,
+                grad_accum_steps=2,
                 lr=2.0e-3,
                 min_lr=1e-6,
                 weight_decay=3e-4,
@@ -165,7 +166,8 @@ def run_cnn_experiments(args: argparse.Namespace) -> None:
                 epochs=args.epochs,
                 warmup_epochs=4,
                 patience=12,
-                batch_size=128,
+                batch_size=64,
+                grad_accum_steps=2,
                 lr=2.0e-3,
                 min_lr=1e-6,
                 weight_decay=3e-4,
@@ -238,8 +240,26 @@ def run_cnn_experiments(args: argparse.Namespace) -> None:
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     out_json = RESULTS_DIR / "cnn_tuning_experiments.json"
+    existing_map: Dict[str, Dict[str, Any]] = {}
+    if out_json.exists():
+        try:
+            with open(out_json, "r", encoding="utf-8") as f:
+                old_data = json.load(f)
+            for item in old_data.get("experiments", []):
+                if isinstance(item, dict) and "name" in item:
+                    existing_map[item["name"]] = item
+        except Exception:
+            pass
+    for item in results_summary:
+        existing_map[item["name"]] = item
+    merged_experiments = list(existing_map.values())
+    best_overall = max(merged_experiments, key=lambda x: float(x.get("val_sv_macro_f1", -1.0))) if merged_experiments else None
     with open(out_json, "w", encoding="utf-8") as f:
-        json.dump({"experiments": results_summary, "best_name": best_res["name"] if best_res else None}, f, indent=2)
+        json.dump(
+            {"experiments": merged_experiments, "best_name": best_overall["name"] if best_overall else None},
+            f,
+            indent=2,
+        )
     print(f"\n[tune_cnn] Saved tuning summary to {out_json}", flush=True)
 
 

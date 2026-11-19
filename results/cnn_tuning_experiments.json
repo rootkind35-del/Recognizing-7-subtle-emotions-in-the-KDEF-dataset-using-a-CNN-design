@@ -71,7 +71,31 @@
         "sad": 0.6197,
         "surprise": 0.7737
       }
+    },
+    {
+      "name": "cnn_v2res_bs128_lr2e3_cw50_erase15",
+      "best_epoch": 35,
+      "elapsed_sec": 4177.7,
+      "val_sv_macro_f1": 0.710429,
+      "val_sv_acc": 0.71604,
+      "val_sv_roc_auc": 0.932952,
+      "val_tta_macro_f1": 0.718241,
+      "val_tta_acc": 0.722055,
+      "per_source_acc": {
+        "kdef": 0.908766,
+        "radiate": 0.851351,
+        "fer2013": 0.677125
+      },
+      "per_class_f1": {
+        "angry": 0.6618,
+        "disgust": 0.7704,
+        "fear": 0.5612,
+        "happy": 0.8793,
+        "neutral": 0.687,
+        "sad": 0.6277,
+        "surprise": 0.7856
+      }
     }
   ],
-  "best_name": "cnn_exp3_bs128_lr2e3_cw50_erase15"
+  "best_name": "cnn_v2res_bs128_lr2e3_cw50_erase15"
 }
