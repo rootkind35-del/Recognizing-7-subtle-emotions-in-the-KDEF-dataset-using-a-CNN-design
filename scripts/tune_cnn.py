@@ -67,6 +67,39 @@ def run_cnn_experiments(args: argparse.Namespace) -> None:
 
     experiments: List[TrainConfig] = []
 
+    if args.mode in ("v3_vgg", "all"):
+        experiments.append(
+            TrainConfig(
+                name="cnn_v3vgg_bs128_lr15e4_cw45_erase15",
+                variant="v3_vgg",
+                epochs=args.epochs,
+                warmup_epochs=4,
+                patience=12,
+                batch_size=64,
+                grad_accum_steps=2,
+                lr=1.5e-3,
+                min_lr=1e-6,
+                weight_decay=4e-4,
+                class_weight_power=0.45,
+                label_smoothing=0.05,
+                focal_gamma=0.50,
+                poly_eps=0.10,
+                two_view_flip=False,
+                flip_kl_weight=0.0,
+                flip_feat_weight=0.0,
+                supcon_weight=0.12,
+                supcon_temp=0.08,
+                aug_mode="enhanced",
+                facial_erase_prob=0.15,
+                mix_prob=0.25,
+                mix_start_epoch=4,
+                mix_end_epoch=max(10, args.epochs - 7),
+                finetune_epochs=6,
+                tune_val_bias=True,
+                seed=args.seed,
+            )
+        )
+
     if args.mode in ("v2_res", "all"):
         experiments.append(
             TrainConfig(
@@ -265,7 +298,7 @@ def run_cnn_experiments(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Tune CNN on multicultural train/val splits")
-    parser.add_argument("--mode", type=str, default="screen", choices=["screen", "v2_res", "all"])
+    parser.add_argument("--mode", type=str, default="screen", choices=["screen", "v2_res", "v3_vgg", "all"])
     parser.add_argument("--epochs", type=int, default=40)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", type=str, default=None)

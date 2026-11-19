@@ -38,7 +38,10 @@ class SymmetricMultiScaleAUBlock(nn.Module):
 
     def __init__(self, channels: int = 256):
         super().__init__()
-        c33, c13, c31, cd2 = 96, 64, 64, 96
+        c33 = (channels * 3) // 8
+        c13 = channels // 4
+        c31 = channels // 4
+        cd2 = (channels * 3) // 8
         mid_ch = c33 + c13 + c31 + cd2
         self.b33 = nn.Conv2d(channels, c33, kernel_size=3, padding=1, bias=False)
         self.b13 = nn.Conv2d(channels, c13, kernel_size=(1, 3), padding=(0, 1), bias=False)
@@ -118,63 +121,74 @@ class KDEF_Stem2Ch_MS4_Symmetric(nn.Module):
         self.num_classes = num_classes
         self.variant = str(variant)
 
-        # Stem song song 3x3 + 5x5 -> 32 -> 3x3 -> MaxPool
-        self.stem_3x3 = nn.Conv2d(in_channels, 16, kernel_size=3, padding=1, bias=False)
-        self.stem_5x5 = nn.Conv2d(in_channels, 16, kernel_size=5, padding=2, bias=False)
-        self.stem_bn1 = nn.BatchNorm2d(32)
+        if self.variant == "v3_vgg":
+            c1, c2, c3, c4 = 48, 96, 192, 384
+            embed_dim = 256
+        else:
+            c1, c2, c3, c4 = 32, 64, 128, 256
+            embed_dim = 128
+
+        # Stem song song 3x3 + 5x5 -> c1 -> 3x3 -> MaxPool
+        self.stem_3x3 = nn.Conv2d(in_channels, c1 // 2, kernel_size=3, padding=1, bias=False)
+        self.stem_5x5 = nn.Conv2d(in_channels, c1 // 2, kernel_size=5, padding=2, bias=False)
+        self.stem_bn1 = nn.BatchNorm2d(c1)
         self.stem_act1 = nn.SiLU(inplace=True)
-        self.stem_conv2 = nn.Conv2d(32, 32, kernel_size=3, padding=1, bias=False)
-        self.stem_bn2 = nn.BatchNorm2d(32)
+        self.stem_conv2 = nn.Conv2d(c1, c1, kernel_size=3, padding=1, bias=False)
+        self.stem_bn2 = nn.BatchNorm2d(c1)
         self.stem_act2 = nn.SiLU(inplace=True)
         self.stem_pool = nn.MaxPool2d(2, 2)
 
-        # Stage 2: 32 -> 64 -> 64
+        # Stage 2: c1 -> c2 -> c2 (VGG Block 2)
         self.stage2 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(c1, c2, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(c2),
             nn.SiLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(c2, c2, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(c2),
             nn.SiLU(inplace=True),
             nn.Identity(),
             nn.MaxPool2d(2, 2),
         )
 
-        # Stage 3: 64 -> 128 -> 128 + ECA-Net
-        self.s3_conv1 = nn.Conv2d(64, 128, kernel_size=3, padding=1, bias=False)
-        self.s3_bn1 = nn.BatchNorm2d(128)
+        # Stage 3: c2 -> c3 -> c3 (+ conv3 in v3_vgg like VGG-16 Block 3) + ECA-Net
+        self.s3_conv1 = nn.Conv2d(c2, c3, kernel_size=3, padding=1, bias=False)
+        self.s3_bn1 = nn.BatchNorm2d(c3)
         self.s3_act1 = nn.SiLU(inplace=True)
-        self.s3_conv2 = nn.Conv2d(128, 128, kernel_size=3, padding=1, bias=False)
-        self.s3_bn2 = nn.BatchNorm2d(128)
+        self.s3_conv2 = nn.Conv2d(c3, c3, kernel_size=3, padding=1, bias=False)
+        self.s3_bn2 = nn.BatchNorm2d(c3)
+        if self.variant == "v3_vgg":
+            self.s3_act_mid = nn.SiLU(inplace=True)
+            self.s3_conv3 = nn.Conv2d(c3, c3, kernel_size=3, padding=1, bias=False)
+            self.s3_bn3 = nn.BatchNorm2d(c3)
         self.s3_eca = ECALayer(kernel_size=3)
         self.s3_act2 = nn.SiLU(inplace=True)
         self.s3_pool = nn.MaxPool2d(2, 2)
 
-        # Stage 4: 128 -> 256 -> SymmetricMultiScaleAUBlock(256)
-        self.s4_conv1 = nn.Conv2d(128, 256, kernel_size=3, padding=1, bias=False)
-        self.s4_bn1 = nn.BatchNorm2d(256)
+        # Stage 4: c3 -> c4 -> SymmetricMultiScaleAUBlock(c4)
+        self.s4_conv1 = nn.Conv2d(c3, c4, kernel_size=3, padding=1, bias=False)
+        self.s4_bn1 = nn.BatchNorm2d(c4)
         self.s4_act1 = nn.SiLU(inplace=True)
-        self.s4_ms = SymmetricMultiScaleAUBlock(256)
+        self.s4_ms = SymmetricMultiScaleAUBlock(c4)
 
-        if self.variant == "v2_res":
+        if self.variant in ("v2_res", "v3_vgg"):
             self.s2_skip = nn.Sequential(
-                nn.Conv2d(32, 64, kernel_size=1, bias=False),
-                nn.BatchNorm2d(64),
+                nn.Conv2d(c1, c2, kernel_size=1, bias=False),
+                nn.BatchNorm2d(c2),
             )
             self.s3_skip = nn.Sequential(
-                nn.Conv2d(64, 128, kernel_size=1, bias=False),
-                nn.BatchNorm2d(128),
+                nn.Conv2d(c2, c3, kernel_size=1, bias=False),
+                nn.BatchNorm2d(c3),
             )
-            head_in_dim = 1024
-            drop_in, drop_mid = 0.30, 0.15
+            head_in_dim = c4 * 4
+            drop_in, drop_mid = (0.35, 0.20) if self.variant == "v3_vgg" else (0.30, 0.15)
         else:
-            head_in_dim = 512
+            head_in_dim = c4 * 2
             drop_in, drop_mid = 0.45, 0.30
 
-        # Upper/Lower Facial Strip Pooling & Head -> 128 -> 7
+        # Upper/Lower Facial Strip Pooling & Head -> embed_dim -> 7
         self.head = FacialProjectionHead(
             in_features=head_in_dim,
-            embed_dim=128,
+            embed_dim=embed_dim,
             num_classes=num_classes,
             drop_in=drop_in,
             drop_mid=drop_mid,
@@ -202,13 +216,17 @@ class KDEF_Stem2Ch_MS4_Symmetric(nn.Module):
         s1 = torch.cat([self.stem_3x3(x), self.stem_5x5(x)], dim=1)
         s1 = self.stem_act1(self.stem_bn1(s1))
         s1 = self.stem_pool(self.stem_act2(self.stem_bn2(self.stem_conv2(s1))))
-        if self.variant == "v2_res":
+        if self.variant in ("v2_res", "v3_vgg"):
             s2_h = self.stage2[2](self.stage2[1](self.stage2[0](s1)))
             s2_h = self.stage2[4](self.stage2[3](s2_h))
             s2 = self.stage2[7](self.stage2[5](s2_h + self.s2_skip(s1)))
 
             h3 = self.s3_act1(self.s3_bn1(self.s3_conv1(s2)))
-            h3 = self.s3_eca(self.s3_bn2(self.s3_conv2(h3)))
+            if self.variant == "v3_vgg":
+                h3 = self.s3_act_mid(self.s3_bn2(self.s3_conv2(h3)))
+                h3 = self.s3_eca(self.s3_bn3(self.s3_conv3(h3)))
+            else:
+                h3 = self.s3_eca(self.s3_bn2(self.s3_conv2(h3)))
             s3 = self.s3_pool(self.s3_act2(h3 + self.s3_skip(s2)))
 
             h4 = self.s4_act1(self.s4_bn1(self.s4_conv1(s3)))
@@ -231,7 +249,7 @@ class KDEF_Stem2Ch_MS4_Symmetric(nn.Module):
         self, x: torch.Tensor, return_embed: bool = False
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         f = self.extract_stage4_pre_pool(x)
-        if self.variant == "v2_res":
+        if self.variant in ("v2_res", "v3_vgg"):
             p_avg = F.adaptive_avg_pool2d(f, (2, 1))
             p_max = F.adaptive_max_pool2d(f, (2, 1))
             p = torch.cat([p_avg, p_max], dim=1).flatten(1)
@@ -309,7 +327,12 @@ def load_kdef_checkpoint(
     cfg = ckpt.get("config", {})
     in_channels = int(cfg.get("in_channels", state_dict["stem_3x3.weight"].shape[1]))
     crop_mode = str(cfg.get("crop_mode", "ssd_square_pad" if cfg.get("crop", True) else "none"))
-    variant = str(cfg.get("variant", "v2_res" if "s2_skip.0.weight" in state_dict else "v1"))
+    default_variant = (
+        "v3_vgg"
+        if "s3_conv3.weight" in state_dict
+        else ("v2_res" if "s2_skip.0.weight" in state_dict else "v1")
+    )
+    variant = str(cfg.get("variant", default_variant))
 
     model = KDEF_Stem2Ch_MS4_Symmetric(in_channels=in_channels, num_classes=num_classes, variant=variant)
     model.load_state_dict(state_dict, strict=True)
