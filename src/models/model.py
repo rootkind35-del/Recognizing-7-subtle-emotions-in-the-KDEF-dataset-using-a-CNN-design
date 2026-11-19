@@ -111,11 +111,12 @@ class KDEF_Stem2Ch_MS4_Symmetric(nn.Module):
     - Head 512->128->7 hỗ trợ `forward(x, return_embed=True)` cho SupCon và `get_gradcam_target_layers()`
     """
 
-    def __init__(self, in_channels: int = 1, num_classes: int = 7):
+    def __init__(self, in_channels: int = 1, num_classes: int = 7, variant: str = "v1"):
         super().__init__()
         self.model_name = "stem2ch_ms4_fuse"
         self.in_channels = in_channels
         self.num_classes = num_classes
+        self.variant = str(variant)
 
         # Stem song song 3x3 + 5x5 -> 32 -> 3x3 -> MaxPool
         self.stem_3x3 = nn.Conv2d(in_channels, 16, kernel_size=3, padding=1, bias=False)
@@ -155,13 +156,28 @@ class KDEF_Stem2Ch_MS4_Symmetric(nn.Module):
         self.s4_act1 = nn.SiLU(inplace=True)
         self.s4_ms = SymmetricMultiScaleAUBlock(256)
 
-        # Upper/Lower Facial Strip Pooling & Head 512 -> 128 -> 7
+        if self.variant == "v2_res":
+            self.s2_skip = nn.Sequential(
+                nn.Conv2d(32, 64, kernel_size=1, bias=False),
+                nn.BatchNorm2d(64),
+            )
+            self.s3_skip = nn.Sequential(
+                nn.Conv2d(64, 128, kernel_size=1, bias=False),
+                nn.BatchNorm2d(128),
+            )
+            head_in_dim = 1024
+            drop_in, drop_mid = 0.30, 0.15
+        else:
+            head_in_dim = 512
+            drop_in, drop_mid = 0.45, 0.30
+
+        # Upper/Lower Facial Strip Pooling & Head -> 128 -> 7
         self.head = FacialProjectionHead(
-            in_features=512,
+            in_features=head_in_dim,
             embed_dim=128,
             num_classes=num_classes,
-            drop_in=0.45,
-            drop_mid=0.30,
+            drop_in=drop_in,
+            drop_mid=drop_mid,
         )
 
         self._init_weights()
@@ -186,6 +202,18 @@ class KDEF_Stem2Ch_MS4_Symmetric(nn.Module):
         s1 = torch.cat([self.stem_3x3(x), self.stem_5x5(x)], dim=1)
         s1 = self.stem_act1(self.stem_bn1(s1))
         s1 = self.stem_pool(self.stem_act2(self.stem_bn2(self.stem_conv2(s1))))
+        if self.variant == "v2_res":
+            s2_h = self.stage2[2](self.stage2[1](self.stage2[0](s1)))
+            s2_h = self.stage2[4](self.stage2[3](s2_h))
+            s2 = self.stage2[7](self.stage2[5](s2_h + self.s2_skip(s1)))
+
+            h3 = self.s3_act1(self.s3_bn1(self.s3_conv1(s2)))
+            h3 = self.s3_eca(self.s3_bn2(self.s3_conv2(h3)))
+            s3 = self.s3_pool(self.s3_act2(h3 + self.s3_skip(s2)))
+
+            h4 = self.s4_act1(self.s4_bn1(self.s4_conv1(s3)))
+            return self.s4_ms(h4) + h4
+
         s2 = self.stage2(s1)
 
         h3 = self.s3_act1(self.s3_bn1(self.s3_conv1(s2)))
@@ -203,7 +231,12 @@ class KDEF_Stem2Ch_MS4_Symmetric(nn.Module):
         self, x: torch.Tensor, return_embed: bool = False
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         f = self.extract_stage4_pre_pool(x)
-        p = F.adaptive_avg_pool2d(f, (2, 1)).flatten(1)
+        if self.variant == "v2_res":
+            p_avg = F.adaptive_avg_pool2d(f, (2, 1))
+            p_max = F.adaptive_max_pool2d(f, (2, 1))
+            p = torch.cat([p_avg, p_max], dim=1).flatten(1)
+        else:
+            p = F.adaptive_avg_pool2d(f, (2, 1)).flatten(1)
         return self.head(p, return_embed=return_embed)
 
     def probe_activations(self, x: torch.Tensor) -> Dict[str, Dict[str, float]]:
@@ -275,8 +308,9 @@ def load_kdef_checkpoint(
     cfg = ckpt.get("config", {})
     in_channels = int(cfg.get("in_channels", state_dict["stem_3x3.weight"].shape[1]))
     crop_mode = str(cfg.get("crop_mode", "ssd_square_pad" if cfg.get("crop", True) else "none"))
+    variant = str(cfg.get("variant", "v2_res" if "s2_skip.0.weight" in state_dict else "v1"))
 
-    model = KDEF_Stem2Ch_MS4_Symmetric(in_channels=in_channels, num_classes=num_classes)
+    model = KDEF_Stem2Ch_MS4_Symmetric(in_channels=in_channels, num_classes=num_classes, variant=variant)
     model.load_state_dict(state_dict, strict=True)
     model.to(device)
     model.eval()

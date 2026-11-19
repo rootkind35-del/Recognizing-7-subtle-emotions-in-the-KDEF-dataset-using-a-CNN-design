@@ -408,13 +408,13 @@ def gpu_augment_batch(
     x = (x - mean_v) / std_v
 
     if erase_prob > 0.0:
-        for i in range(b):
-            if float(torch.rand(1, device=dev).item()) < erase_prob:
-                eh = random.randint(int(0.12 * h), int(0.32 * h))
-                ew = random.randint(int(0.12 * w), int(0.35 * w))
-                top = random.randint(int(0.10 * h), max(int(0.10 * h), h - eh))
-                left = random.randint(0, max(0, w - ew))
-                x[i, :, top : top + eh, left : left + ew] = 0.0
+        erase_mask = torch.rand(b, device=dev) < erase_prob
+        if erase_mask.any():
+            eh = random.randint(int(0.12 * h), int(0.32 * h))
+            ew = random.randint(int(0.12 * w), int(0.35 * w))
+            top = random.randint(int(0.10 * h), max(int(0.10 * h), h - eh))
+            left = random.randint(0, max(0, w - ew))
+            x[erase_mask, :, top : top + eh, left : left + ew] = 0.0
 
     return x
 
@@ -654,7 +654,7 @@ def optimize_val_logit_bias(
     for _ in range(max_rounds):
         improved = False
         for c in range(len(CLASS_NAMES)):
-            cur_c = best_bias[c]
+            best_c = best_bias[c]
             for cand in grid:
                 trial_bias = best_bias.copy()
                 trial_bias[c] = cand
@@ -667,10 +667,9 @@ def optimize_val_logit_bias(
                 ):
                     best_f1 = f1
                     best_acc = acc
-                    best_bias = trial_bias
+                    best_c = float(cand)
                     improved = True
-                else:
-                    best_bias[c] = cur_c
+            best_bias[c] = best_c
         if not improved:
             break
 
@@ -695,6 +694,7 @@ def optimize_val_logit_bias(
 class TrainConfig:
     name: str = "multicultural_cnn_opt"
     arch: str = "stem2ch_ms4_fuse"
+    variant: str = "v1"
     img_size: int = 160
     crop_mode: str = DEFAULT_CROP_MODE
     ssd_margin: float = DEFAULT_SSD_MARGIN
@@ -770,7 +770,7 @@ def train_cnn_run(
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = KDEF_Stem2Ch_MS4_Symmetric(in_channels=1, num_classes=len(CLASS_NAMES)).to(device)
+    model = KDEF_Stem2Ch_MS4_Symmetric(in_channels=1, num_classes=len(CLASS_NAMES), variant=cfg.variant).to(device)
     if device.type == "cuda":
         model = model.to(memory_format=torch.channels_last)
 
@@ -1055,7 +1055,7 @@ def train_cnn_run(
 
     # Evaluate Greedy Model Soup on val if enabled
     if soup is not None and len(soup.snapshots) >= 2:
-        eval_m = KDEF_Stem2Ch_MS4_Symmetric(in_channels=1, num_classes=len(CLASS_NAMES)).to(device)
+        eval_m = KDEF_Stem2Ch_MS4_Symmetric(in_channels=1, num_classes=len(CLASS_NAMES), variant=cfg.variant).to(device)
 
         def _eval_sd_f1(sd: Dict[str, torch.Tensor]) -> float:
             eval_m.load_state_dict({k: v.to(device) for k, v in sd.items()})
@@ -1209,6 +1209,7 @@ def train_cnn_run(
             "normalization": {"mean": cfg.mean, "std": cfg.std},
             "config": {
                 "model_name": model.model_name,
+                "variant": cfg.variant,
                 "in_channels": 1,
                 "crop": cfg.use_crop,
                 "clahe": cfg.use_clahe,
