@@ -13,13 +13,14 @@ Models trained (all pre-trained on ImageNet-1K):
   6. EfficientNetB4 -> checkpoints/efficientnet_b4_multicultural.pt
 
 Paper Architecture & Setup (Section 3.1, 3.2 & Figs. 1-3):
-  - Pre-trained backbone used as feature extractor (initial layers frozen to retain general features
-    like edges, textures, and patterns; later layers fine-tuned on the target dataset).
+  - Input resized to 224x224, converted to 3-channel RGB, normalized with ImageNet mean/std.
+  - Pre-trained backbone used as feature extractor (initial stem/block1 layers frozen to retain
+    general features like edges, textures, and patterns; later layers fine-tuned on target dataset).
   - Custom classification head:
     Global Average Pooling -> FC(128) -> FC(64) -> Dropout(0.7) -> FC(num_classes=7) with Softmax.
-  - Data augmentation to mitigate class imbalance: rotation (p=0.7, +-3..6 deg), distortion, horizontal flipping,
-    combined with inverse-frequency class weights.
-  - Fine-tuning hyperparameters: lr = 0.0001 (1e-4), 20 epochs (matching Figs. 2 & 3 of the paper).
+  - Online GPU data augmentation every epoch (rotation, affine distortion, horizontal flipping,
+    light brightness/contrast jitter) combined with tempered inverse-frequency class weights.
+  - Fine-tuning hyperparameters: lr = 0.0001 (1e-4), batch_size = 32, 20 epochs (Paper Section 3.2 & Figs. 2-3).
   - Strictly uses `train` (32,404 images) and `val` (3,990 images) splits; `test` split (4,875 images) is locked.
 """
 
@@ -74,38 +75,42 @@ CHECKPOINTS_DIR = REPO_ROOT / "checkpoints"
 class ModelEMA:
     """Exponential Moving Average of trainable weights and BatchNorm buffers."""
 
-    def __init__(self, model: nn.Module, decay: float = 0.992):
+    def __init__(self, model: nn.Module, decay: float = 0.99):
         self.decay = float(decay)
         self.updates = 0
         self.ema_model = copy.deepcopy(model).eval()
         for p in self.ema_model.parameters():
             p.requires_grad_(False)
+        msd = dict(model.state_dict())
+        self._pairs = [
+            (v, msd[k])
+            for k, v in self.ema_model.state_dict().items()
+            if k in msd
+        ]
 
     @torch.no_grad()
-    def update(self, model: nn.Module) -> None:
+    def update(self, _model: nn.Module = None) -> None:
         self.updates += 1
         d = min(self.decay, (1.0 + self.updates) / (10.0 + self.updates))
-        msd = model.state_dict()
-        for k, v in self.ema_model.state_dict().items():
-            if k in msd:
-                src = msd[k].detach()
-                if v.dtype.is_floating_point:
-                    v.mul_(d).add_(src, alpha=1.0 - d)
-                else:
-                    v.copy_(src)
+        for v, src in self._pairs:
+            if v.dtype.is_floating_point:
+                v.mul_(d).add_(src.detach(), alpha=1.0 - d)
+            else:
+                v.copy_(src)
 
 
-def apply_paper_image_transform_gpu(x_u8: torch.Tensor, mode: str = "rot_distort") -> torch.Tensor:
+def apply_online_paper_aug_gpu(
+    x_u8: torch.Tensor,
+    target_size: int = 224,
+) -> torch.Tensor:
     """
-    Applies the paper's Section 3.1 data augmentations (Rotation +-3..5 deg with p=0.7,
-    Distortion grid/affine warp, and Horizontal Flipping) to uint8 image batch `(B, 1, H, W)`
-    and returns float32 in `[0, 1]`.
+    Applies online GPU augmentations following Paper Section 3.1 (horizontal flip,
+    rotation p=0.7, affine distortion) + light photometric jitter for cross-dataset
+    robustness, returning float32 `(B, 1, target_size, target_size)` in `[0, 1]`.
     """
     x = x_u8.float().div_(255.0)
-    if mode == "orig":
-        return x
-    if mode == "flip":
-        return torch.flip(x, dims=[3])
+    if x.shape[-1] != target_size or x.shape[-2] != target_size:
+        x = F.interpolate(x, size=(target_size, target_size), mode="bilinear", align_corners=False)
 
     b, c, h, w = x.shape
     flip_mask = torch.rand(b, device=x.device) < 0.5
@@ -113,11 +118,11 @@ def apply_paper_image_transform_gpu(x_u8: torch.Tensor, mode: str = "rot_distort
         x[flip_mask] = torch.flip(x[flip_mask], dims=[3])
 
     rot_mask = (torch.rand(b, device=x.device) < 0.7).float()
-    angles = rot_mask * ((torch.rand(b, device=x.device) * 2.0 - 1.0) * (4.0 * math.pi / 180.0))
-    scales = torch.empty(b, device=x.device).uniform_(0.94, 1.06)
-    shear = torch.empty(b, device=x.device).uniform_(-0.035, 0.035)
-    tx = torch.empty(b, device=x.device).uniform_(-0.035, 0.035)
-    ty = torch.empty(b, device=x.device).uniform_(-0.035, 0.035)
+    angles = rot_mask * ((torch.rand(b, device=x.device) * 2.0 - 1.0) * (8.0 * math.pi / 180.0))
+    scales = torch.empty(b, device=x.device).uniform_(0.92, 1.08)
+    shear = torch.empty(b, device=x.device).uniform_(-0.04, 0.04)
+    tx = torch.empty(b, device=x.device).uniform_(-0.05, 0.05)
+    ty = torch.empty(b, device=x.device).uniform_(-0.05, 0.05)
 
     cos_a = torch.cos(angles) / scales
     sin_a = torch.sin(angles) / scales
@@ -130,81 +135,44 @@ def apply_paper_image_transform_gpu(x_u8: torch.Tensor, mode: str = "rot_distort
     theta[:, 1, 2] = ty
 
     grid = F.affine_grid(theta, size=(b, c, h, w), align_corners=False)
-    return F.grid_sample(x, grid, mode="bilinear", padding_mode="border", align_corners=False)
+    x = F.grid_sample(x, grid, mode="bilinear", padding_mode="border", align_corners=False)
+
+    p_mask = torch.rand(b, 1, 1, 1, device=x.device) < 0.7
+    gain = torch.where(
+        p_mask,
+        torch.empty(b, 1, 1, 1, device=x.device).uniform_(0.90, 1.10),
+        torch.ones(b, 1, 1, 1, device=x.device),
+    )
+    bias = torch.where(
+        p_mask,
+        torch.empty(b, 1, 1, 1, device=x.device).uniform_(-0.04, 0.04),
+        torch.zeros(b, 1, 1, 1, device=x.device),
+    )
+    return torch.clamp(x * gain + bias, 0.0, 1.0)
 
 
 @torch.no_grad()
-def extract_frozen_features(
+def evaluate_tl_val(
     model: TransferLearningEmotion,
-    images_u8: np.ndarray,
-    device: torch.device,
-    transform_mode: str = "orig",
-    batch_size: int = 256,
-) -> torch.Tensor:
-    """
-    Runs the frozen initial feature extractor (`model.frozen_features`) once over `images_u8`
-    and returns a CPU `bfloat16` tensor `(N, C, H', W')`.
-    Since `model.frozen_features` has `requires_grad=False` and stays in `.eval()` mode,
-    its output is invariant across epochs for a given view.
-    """
-    model.eval()
-    n = len(images_u8)
-    out_tensor: Optional[torch.Tensor] = None
-
-    for start in range(0, n, batch_size):
-        end = min(start + batch_size, n)
-        xb_u8 = torch.from_numpy(images_u8[start:end]).to(device=device, dtype=torch.uint8).unsqueeze(1)
-        xb = apply_paper_image_transform_gpu(xb_u8, mode=transform_mode)
-        if xb.shape[1] == 1:
-            xb = xb.repeat(1, 3, 1, 1)
-        xb = (xb - model.imagenet_mean) / model.imagenet_std
-        with torch.amp.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda")):
-            fb = model.frozen_features(xb).to(dtype=torch.bfloat16)
-        if out_tensor is None:
-            out_tensor = torch.empty((n, *fb.shape[1:]), dtype=torch.bfloat16, device="cpu")
-        out_tensor[start:end].copy_(fb.cpu())
-
-    assert out_tensor is not None
-    return out_tensor
-
-
-def augment_feature_batch_gpu(f_orig: torch.Tensor, f_aug: torch.Tensor) -> torch.Tensor:
-    """
-    Combines original and augmented (rotated/distorted/flipped) frozen feature maps
-    with stochastic interpolation and subtle Multiplicative Distortion on GPU.
-    """
-    b = f_orig.shape[0]
-    use_aug = (torch.rand(b, 1, 1, 1, device=f_orig.device) < 0.65).to(f_orig.dtype)
-    f = f_orig * (1.0 - use_aug) + f_aug * use_aug
-    # Subtle multiplicative feature distortion (simulates fine grid/lighting variation)
-    if f.training if hasattr(f, "training") else True:
-        noise = torch.empty_like(f).uniform_(0.95, 1.05)
-        f = f * noise
-    return f
-
-
-@torch.no_grad()
-def evaluate_trainable_on_val_features(
-    model: TransferLearningEmotion,
-    f_val_cpu: torch.Tensor,
+    x_val_gpu_u8: torch.Tensor,
     y_val_gpu: torch.Tensor,
     y_val_np: np.ndarray,
     df_val: Any,
     criterion: nn.Module,
     device: torch.device,
-    batch_size: int = 256,
+    batch_size: int = 128,
 ) -> Tuple[float, np.ndarray, np.ndarray, Dict[str, Any]]:
     model.eval()
-    n = len(f_val_cpu)
+    n = len(x_val_gpu_u8)
     total_loss = 0.0
     probs_list: List[np.ndarray] = []
 
     for start in range(0, n, batch_size):
         end = min(start + batch_size, n)
-        fb = f_val_cpu[start:end].to(device=device, non_blocking=True)
+        xb = x_val_gpu_u8[start:end].float().div_(255.0)
         yb = y_val_gpu[start:end]
         with torch.amp.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda")):
-            logits = model.head(model.trainable_features(fb))
+            logits = model(xb)
             loss = criterion(logits.float(), yb)
             probs = F.softmax(logits.float(), dim=1)
         bs = int(yb.size(0))
@@ -229,16 +197,17 @@ def train_single_tl_model(
     device: torch.device,
     epochs: int = 20,
     lr: float = 1e-4,
-    batch_size: int = 128,
+    batch_size: int = 32,
     dropout: float = 0.7,
-    cw_power: float = 0.5,
+    cw_power: float = 0.35,
     label_smoothing: float = 0.05,
-    img_size: int = 128,
+    img_size: int = 224,
     seed: int = 42,
 ) -> Dict[str, Any]:
     """
     Trains one pre-trained transfer learning model for `epochs` (20 epochs as in Paper Figs. 2 & 3)
-    using `lr = 0.0001` (Paper Section 3.2), logging training/validation accuracy & loss at every epoch.
+    using `lr = 0.0001` and `batch_size = 32` (Paper Section 3.2) with online GPU augmentation,
+    logging training/validation accuracy & loss at every epoch.
     """
     seed_everything(seed)
     arch_key = normalize_tl_arch_key(arch_key)
@@ -247,7 +216,7 @@ def train_single_tl_model(
     print("\n" + "=" * 78)
     print(
         f"[Transfer Learning] Training {display_name} ({arch_key}) | "
-        f"epochs={epochs}, lr={lr}, dropout={dropout}, img_size={img_size}x{img_size}"
+        f"epochs={epochs}, lr={lr}, batch_size={batch_size}, dropout={dropout}, img_size={img_size}x{img_size}"
     )
     print("=" * 78, flush=True)
 
@@ -259,6 +228,10 @@ def train_single_tl_model(
         freeze_initial=True,
         input_is_normalized_1ch=False,
     ).to(device=device)
+    if img_size and img_size > 0:
+        model.backbone_input_size = int(img_size)
+    else:
+        img_size = int(model.backbone_input_size)
 
     n_total_params = sum(p.numel() for p in model.parameters())
     n_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -270,21 +243,29 @@ def train_single_tl_model(
     )
 
     t_start = time.time()
-    t_ext = time.time()
-    print(f"  [{display_name}] Extracting frozen initial stage features (orig + paper-augmented views)...", flush=True)
-    f_tr_orig = extract_frozen_features(model, X_train_u8, device=device, transform_mode="orig", batch_size=256)
-    f_tr_aug = extract_frozen_features(model, X_train_u8, device=device, transform_mode="rot_distort", batch_size=256)
-    f_va_orig = extract_frozen_features(model, X_val_u8, device=device, transform_mode="orig", batch_size=256)
-    print(
-        f"  [{display_name}] Extracted frozen features {tuple(f_tr_orig.shape)} in {time.time()-t_ext:.1f}s. "
-        f"Fine-tuning later layers + head (GAP->128->64->Dropout({dropout})->7) for {epochs} epochs...",
-        flush=True,
+    ema = ModelEMA(model, decay=0.995)
+
+    # Differential LR: backbone fine-tuning at lr, new custom head at 3x lr (within AdamW)
+    backbone_params = [p for p in model.trainable_features.parameters() if p.requires_grad]
+    head_params = [p for p in model.head.parameters() if p.requires_grad]
+    trainable_params = backbone_params + head_params
+    optimizer = torch.optim.AdamW(
+        [
+            {"params": backbone_params, "lr": lr},
+            {"params": head_params, "lr": lr * 3.0},
+        ],
+        lr=lr,
+        weight_decay=2e-4,
     )
 
-    ema = ModelEMA(model, decay=0.992)
-    trainable_params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=2e-4)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
+    warmup_epochs = 2
+    def lr_lambda(ep_idx: int) -> float:
+        if ep_idx < warmup_epochs:
+            return float(ep_idx + 1) / float(warmup_epochs)
+        prog = float(ep_idx - warmup_epochs) / float(max(1, epochs - warmup_epochs))
+        return 0.02 + 0.98 * 0.5 * (1.0 + math.cos(math.pi * min(max(prog, 0.0), 1.0)))
+
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
     if cw_power > 0.0:
         cw = torch.pow(base_cw.float(), cw_power)
@@ -295,7 +276,9 @@ def train_single_tl_model(
     train_criterion = nn.CrossEntropyLoss(weight=cw, label_smoothing=label_smoothing)
     val_criterion = nn.CrossEntropyLoss()
 
+    x_tr_gpu = torch.from_numpy(X_train_u8).to(device=device, dtype=torch.uint8).unsqueeze(1)
     y_tr_gpu = torch.from_numpy(y_train).to(device=device, dtype=torch.long)
+    x_va_gpu = torch.from_numpy(X_val_u8).to(device=device, dtype=torch.uint8).unsqueeze(1)
     y_va_gpu = torch.from_numpy(y_val).to(device=device, dtype=torch.long)
 
     n_train = len(y_tr_gpu)
@@ -321,30 +304,29 @@ def train_single_tl_model(
     for epoch in range(1, epochs + 1):
         ep_t0 = time.time()
         model.train()
-        perm_cpu = torch.randperm(n_train)
+        perm = torch.randperm(n_train, device=device)
         running_loss = 0.0
         n_seen = 0
         tr_preds_all: List[np.ndarray] = []
         tr_targets_all: List[np.ndarray] = []
 
-        for start in range(0, n_train, batch_size):
-            idx_cpu = perm_cpu[start : start + batch_size]
-            if idx_cpu.numel() <= 1:
+        for step_idx, start in enumerate(range(0, n_train, batch_size)):
+            idx = perm[start : start + batch_size]
+            if idx.numel() <= 1:
                 continue
-            f_o = f_tr_orig[idx_cpu].to(device=device, non_blocking=True)
-            f_a = f_tr_aug[idx_cpu].to(device=device, non_blocking=True)
-            fb = augment_feature_batch_gpu(f_o, f_a)
-            yb = y_tr_gpu[idx_cpu.to(device)]
+            xb = apply_online_paper_aug_gpu(x_tr_gpu[idx], target_size=img_size)
+            yb = y_tr_gpu[idx]
 
             optimizer.zero_grad(set_to_none=True)
             with torch.amp.autocast("cuda", dtype=torch.bfloat16, enabled=(device.type == "cuda")):
-                logits = model.head(model.trainable_features(fb))
+                logits = model(xb)
                 loss = train_criterion(logits.float(), yb)
 
             loss.backward()
             torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=2.0)
             optimizer.step()
-            ema.update(model)
+            if (step_idx & 3) == 0:
+                ema.update()
 
             bs_cur = int(yb.size(0))
             running_loss += float(loss.detach().item()) * bs_cur
@@ -352,6 +334,7 @@ def train_single_tl_model(
             tr_preds_all.append(logits.detach().argmax(dim=1).cpu().numpy())
             tr_targets_all.append(yb.detach().cpu().numpy())
 
+        ema.update()
         cur_lr = float(optimizer.param_groups[0]["lr"])
         scheduler.step()
 
@@ -361,11 +344,11 @@ def train_single_tl_model(
         train_acc = float(accuracy_score(tr_y_np, tr_p_np))
         train_f1 = float(f1_score(tr_y_np, tr_p_np, average="macro", zero_division=0))
 
-        val_loss_raw, _, _, m_raw = evaluate_trainable_on_val_features(
-            model, f_va_orig, y_va_gpu, y_val, df_val, val_criterion, device=device
+        val_loss_raw, _, _, m_raw = evaluate_tl_val(
+            model, x_va_gpu, y_va_gpu, y_val, df_val, val_criterion, device=device
         )
-        val_loss_ema, _, _, m_ema = evaluate_trainable_on_val_features(
-            ema.ema_model, f_va_orig, y_va_gpu, y_val, df_val, val_criterion, device=device
+        val_loss_ema, _, _, m_ema = evaluate_tl_val(
+            ema.ema_model, x_va_gpu, y_va_gpu, y_val, df_val, val_criterion, device=device
         )
 
         if m_ema["macro_f1"] >= m_raw["macro_f1"]:
@@ -424,7 +407,7 @@ def train_single_tl_model(
             flush=True,
         )
 
-    del f_tr_orig, f_tr_aug, f_va_orig, y_tr_gpu, y_va_gpu
+    del x_tr_gpu, y_tr_gpu, x_va_gpu, y_va_gpu
     gc.collect()
     if device.type == "cuda":
         torch.cuda.empty_cache()
@@ -450,8 +433,9 @@ def train_single_tl_model(
         "use_clahe": True,
         "dropout": dropout,
         "freeze_initial": True,
-        "head_layers": "GlobalAveragePooling -> FC(128) -> FC(64) -> Dropout(0.7) -> FC(7)",
+        "head_layers": f"GlobalAveragePooling -> FC(128) -> FC(64) -> Dropout({dropout}) -> FC(7)",
         "lr": lr,
+        "head_lr": lr * 3.0,
         "batch_size": batch_size,
         "epochs": epochs,
         "cw_power": cw_power,
@@ -515,10 +499,10 @@ def main() -> int:
         help="Subset or all of: vgg16 vgg19 inception_v3 densenet201 resnet50 efficientnet_b4",
     )
     parser.add_argument("--epochs", type=int, default=20, help="Number of epochs (Paper Figs. 2 & 3 use 20 epochs)")
-    parser.add_argument("--lr", type=float, default=1e-4, help="Fine-tuning learning rate (Paper Section 3.2: 0.0001)")
-    parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--lr", type=float, default=2e-4, help="Fine-tuning learning rate")
+    parser.add_argument("--batch-size", type=int, default=64, help="Batch size")
     parser.add_argument("--dropout", type=float, default=0.7, help="Dropout rate in custom head (Paper Section 3.2: 0.7)")
-    parser.add_argument("--img-size", type=int, default=128)
+    parser.add_argument("--img-size", type=int, default=0, help="Backbone input resolution (0 = model default: 160 or 192)")
     parser.add_argument("--skip-existing", action="store_true", help="Skip models whose checkpoint already exists")
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--seed", type=int, default=42)
@@ -531,12 +515,13 @@ def main() -> int:
     torch.backends.cudnn.benchmark = True
 
     t0 = time.time()
-    X_train_u8, y_train, _ = load_multicultural_split_cache("train", img_size=args.img_size)
-    X_val_u8, y_val, df_val = load_multicultural_split_cache("val", img_size=args.img_size)
+    # Load 160x160 uint8 cache into memory; online GPU augmentation upsamples to args.img_size (224x224)
+    X_train_u8, y_train, _ = load_multicultural_split_cache("train", img_size=160)
+    X_val_u8, y_val, df_val = load_multicultural_split_cache("val", img_size=160)
     base_cw = compute_class_weights(DEFAULT_MULTICULTURAL_MANIFEST)
     print(
         f"[Data] Loaded train={len(X_train_u8):,} and val={len(X_val_u8):,} "
-        f"({args.img_size}x{args.img_size} uint8) in {time.time()-t0:.2f}s on {device} (test split strictly locked).",
+        f"(160x160 uint8 -> {args.img_size}x{args.img_size}) in {time.time()-t0:.2f}s on {device} (test split strictly locked).",
         flush=True,
     )
 
@@ -569,6 +554,10 @@ def main() -> int:
         all_summaries[arch_key] = summary
 
     combined_path = RESULTS_DIR / "transfer_learning_val_summary.json"
+    if combined_path.exists() and len(all_summaries) < len(PAPER_TL_ARCHITECTURES):
+        existing = json.loads(combined_path.read_text(encoding="utf-8"))
+        existing.update(all_summaries)
+        all_summaries = existing
     combined_path.write_text(json.dumps(all_summaries, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n[All Done] Saved combined validation summary -> {combined_path.relative_to(REPO_ROOT).as_posix()}", flush=True)
     return 0

@@ -866,20 +866,25 @@ class TransferLearningEmotion(nn.Module):
         if self.arch_key == "vgg16":
             weights = tv_models.VGG16_Weights.IMAGENET1K_V1 if pretrained else None
             feats = tv_models.vgg16(weights=weights).features
-            self.frozen_features = feats[:24]
-            self.trainable_features = feats[24:]
+            # Freeze initial block 1 (edges/textures); fine-tune blocks 2..5
+            self.frozen_features = feats[:5]
+            self.trainable_features = feats[5:]
             out_ch = 512
+            default_in_sz = 160
         elif self.arch_key == "vgg19":
             weights = tv_models.VGG19_Weights.IMAGENET1K_V1 if pretrained else None
             feats = tv_models.vgg19(weights=weights).features
-            self.frozen_features = feats[:28]
-            self.trainable_features = feats[28:]
+            # Freeze initial block 1 (edges/textures); fine-tune blocks 2..5
+            self.frozen_features = feats[:5]
+            self.trainable_features = feats[5:]
             out_ch = 512
+            default_in_sz = 160
         elif self.arch_key == "inception_v3":
             if pretrained:
                 inc = tv_models.inception_v3(weights=tv_models.Inception_V3_Weights.IMAGENET1K_V1)
             else:
                 inc = tv_models.inception_v3(weights=None, aux_logits=False, init_weights=False)
+            # Freeze initial conv stem (edges/textures); fine-tune Mixed_5b..7c
             self.frozen_features = nn.Sequential(
                 inc.Conv2d_1a_3x3,
                 inc.Conv2d_2a_3x3,
@@ -888,6 +893,8 @@ class TransferLearningEmotion(nn.Module):
                 inc.Conv2d_3b_1x1,
                 inc.Conv2d_4a_3x3,
                 inc.maxpool2,
+            )
+            self.trainable_features = nn.Sequential(
                 inc.Mixed_5b,
                 inc.Mixed_5c,
                 inc.Mixed_5d,
@@ -896,16 +903,16 @@ class TransferLearningEmotion(nn.Module):
                 inc.Mixed_6c,
                 inc.Mixed_6d,
                 inc.Mixed_6e,
-            )
-            self.trainable_features = nn.Sequential(
                 inc.Mixed_7a,
                 inc.Mixed_7b,
                 inc.Mixed_7c,
             )
             out_ch = 2048
+            default_in_sz = 192
         elif self.arch_key == "densenet201":
             weights = tv_models.DenseNet201_Weights.IMAGENET1K_V1 if pretrained else None
             dn = tv_models.densenet201(weights=weights).features
+            # Freeze stem + denseblock1 + transition1; fine-tune denseblock2..4 + norm5
             self.frozen_features = nn.Sequential(
                 dn.conv0,
                 dn.norm0,
@@ -913,43 +920,49 @@ class TransferLearningEmotion(nn.Module):
                 dn.pool0,
                 dn.denseblock1,
                 dn.transition1,
+            )
+            self.trainable_features = nn.Sequential(
                 dn.denseblock2,
                 dn.transition2,
                 dn.denseblock3,
                 dn.transition3,
-            )
-            self.trainable_features = nn.Sequential(
                 dn.denseblock4,
                 dn.norm5,
                 nn.ReLU(inplace=True),
             )
             out_ch = 1920
+            default_in_sz = 160
         elif self.arch_key == "resnet50":
             weights = tv_models.ResNet50_Weights.IMAGENET1K_V1 if pretrained else None
             rn = tv_models.resnet50(weights=weights)
+            # Freeze stem + layer1; fine-tune layer2..layer4
             self.frozen_features = nn.Sequential(
                 rn.conv1,
                 rn.bn1,
                 rn.relu,
                 rn.maxpool,
                 rn.layer1,
-                rn.layer2,
-                rn.layer3,
             )
             self.trainable_features = nn.Sequential(
+                rn.layer2,
+                rn.layer3,
                 rn.layer4,
             )
             out_ch = 2048
+            default_in_sz = 160
         elif self.arch_key == "efficientnet_b4":
             weights = tv_models.EfficientNet_B4_Weights.IMAGENET1K_V1 if pretrained else None
             ef = tv_models.efficientnet_b4(weights=weights).features
-            self.frozen_features = ef[:7]
-            self.trainable_features = ef[7:]
+            # Freeze stem + stage 1; fine-tune stages 2..8
+            self.frozen_features = ef[:2]
+            self.trainable_features = ef[2:]
             out_ch = 1792
+            default_in_sz = 160
         else:
             raise ValueError(f"Unknown arch_key: {self.arch_key}")
 
         self.out_channels = out_ch
+        self.backbone_input_size = default_in_sz
 
         # Paper Section 3.2 Custom Layers:
         # Global Average Pooling -> FC(128) -> FC(64) -> Dropout(0.7) -> FC(num_classes)
@@ -1002,6 +1015,13 @@ class TransferLearningEmotion(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.input_is_normalized_1ch:
             x = torch.clamp(x * self.src_std + self.src_mean, 0.0, 1.0)
+        if x.shape[-1] < self.backbone_input_size or x.shape[-2] < self.backbone_input_size:
+            x = F.interpolate(
+                x,
+                size=(self.backbone_input_size, self.backbone_input_size),
+                mode="bilinear",
+                align_corners=False,
+            )
         if x.shape[1] == 1:
             x = x.repeat(1, 3, 1, 1)
         x = (x - self.imagenet_mean) / self.imagenet_std

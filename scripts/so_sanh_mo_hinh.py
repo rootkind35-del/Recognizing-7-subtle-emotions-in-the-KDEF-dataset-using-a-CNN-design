@@ -986,6 +986,9 @@ def main() -> int:
 
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     torch.manual_seed(0)
+    if torch.cuda.is_available():
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
     model_specs: List[Tuple[str, str, Path]] = [
         ("cnn", "cnn", Path(args.cnn) if Path(args.cnn).is_absolute() else REPO_ROOT / args.cnn),
