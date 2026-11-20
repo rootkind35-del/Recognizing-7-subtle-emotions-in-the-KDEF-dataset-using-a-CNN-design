@@ -422,13 +422,14 @@ def load_20ep_histories() -> Dict[str, Dict[str, List[float]]]:
 # Reference Paper Figures (Fig. 1, Fig. 2, Fig. 3, Fig. 4, Table 1 Chart)
 # ---------------------------------------------------------------------------
 def plot_paper_fig1_architecture(out_path: Path) -> None:
-    """Generates Fig. 1: Proposed architecture flowchart matching the reference paper."""
+    """Generates Fig. 1: Proposed architecture flowchart matching the reference paper (with real sample face thumbnails)."""
     import matplotlib.patches as mpatches
     import matplotlib.pyplot as plt
+    from PIL import Image
 
-    fig, ax = plt.subplots(figsize=(13.5, 6.2), dpi=160)
+    fig, ax = plt.subplots(figsize=(13.5, 6.6), dpi=160)
     ax.set_xlim(0, 13.5)
-    ax.set_ylim(0, 6.2)
+    ax.set_ylim(0, 6.6)
     ax.axis("off")
 
     def draw_box(
@@ -449,36 +450,59 @@ def plot_paper_fig1_architecture(out_path: Path) -> None:
             arrowprops=dict(arrowstyle="-|>,head_width=0.35,head_length=0.5", lw=2.2, color="#1A1A1A"),
         )
 
-    # Column 1: Input Images & Preprocessing
-    draw_box(0.4, 4.9, 2.5, 0.8, "Facial Emotion Images\n(KDEF + RADIATE + FER-2013)", bg="#FFF07C", edge="#C2A300", fontsize=9.5)
-    draw_arrow(1.65, 4.9, 1.65, 4.15)
-    draw_box(0.4, 3.4, 2.5, 0.7, "Preprocessing", bg="#F7941D", edge="#B86200", fontsize=10, text_color="white")
-    draw_arrow(1.65, 3.4, 1.65, 2.85)
+    def draw_thumb(rel_path: str, x0: float, y0: float, w: float, h: float, border_color: str = "#444444") -> None:
+        p = REPO_ROOT / rel_path
+        if p.exists():
+            im = Image.open(p).convert("RGB")
+            iw, ih = im.size
+            s = min(iw, ih)
+            im = im.crop(((iw - s) // 2, (ih - s) // 2, (iw + s) // 2, (ih + s) // 2)).resize((128, 128))
+            ax.imshow(np.asarray(im), extent=[x0, x0 + w, y0, y0 + h], aspect="auto", zorder=3)
+        rect = mpatches.Rectangle((x0, y0), w, h, fill=False, edgecolor=border_color, linewidth=1.2, zorder=4)
+        ax.add_patch(rect)
+
+    def draw_double_oval(cx: float, cy: float, w: float, h: float, label: str, color: str) -> None:
+        outer = mpatches.Ellipse((cx, cy), w, h, facecolor="#FFFFFF", edgecolor=color, linewidth=1.8, zorder=3)
+        inner = mpatches.Ellipse((cx, cy), w * 0.88, h * 0.82, facecolor="#FFFFFF", edgecolor=color, linewidth=1.1, zorder=4)
+        ax.add_patch(outer)
+        ax.add_patch(inner)
+        ax.text(cx, cy, label, ha="center", va="center", fontsize=8.8, fontweight="bold", color="#111111", zorder=5)
+
+    # Column 1: Input Images (with real face thumbnails) & Preprocessing
+    draw_box(0.4, 5.75, 2.5, 0.55, "Facial Emotion Images", bg="#FFF07C", edge="#C2A300", fontsize=10)
+    in_frame = mpatches.Rectangle((0.45, 4.15), 2.4, 1.45, facecolor="#FFFFFF", edgecolor="#333333", linewidth=1.2, zorder=2)
+    ax.add_patch(in_frame)
+    draw_thumb("data/radiate/RADIATE_JPEGS1/AF_Color_JPEG/AF03_Color/AF03_HC.jpg", 0.55, 4.25, 1.05, 1.25)
+    draw_thumb("data/official-kdef-dataset-by-ksatrajit0/test/surprise/AF04SUFL.JPG", 1.70, 4.25, 1.05, 1.25)
+    draw_arrow(1.65, 4.12, 1.65, 3.62)
+
+    draw_box(0.4, 2.95, 2.5, 0.62, "Preprocessing", bg="#F7941D", edge="#B86200", fontsize=10, text_color="white")
+    draw_arrow(1.65, 2.92, 1.65, 2.45)
 
     dashed_pre = mpatches.FancyBboxPatch(
-        (0.3, 0.5), 2.7, 2.3, boxstyle="round,pad=0.08", facecolor="#FDFDFD", edgecolor="#333333", linestyle="--", linewidth=1.4
+        (0.3, 0.35), 2.7, 2.0, boxstyle="round,pad=0.08", facecolor="#FDFDFD", edgecolor="#333333", linestyle="--", linewidth=1.4
     )
     ax.add_patch(dashed_pre)
-    draw_box(0.45, 0.7, 0.72, 1.9, "Face SSD\n&\nResize\n(128/160)", bg="#FFFFFF", edge="#666666", fontsize=8.5, bold=False)
-    draw_box(1.29, 0.7, 0.72, 1.9, "Data\nAugment\n(Rotate,\nDistort,\nFlip)", bg="#FFFFFF", edge="#666666", fontsize=8.5, bold=False)
-    draw_box(2.13, 0.7, 0.72, 1.9, "CLAHE &\nNorm\n[0, 1] /\nImageNet", bg="#FFFFFF", edge="#666666", fontsize=8.5, bold=False)
+    draw_box(0.45, 0.50, 0.72, 1.70, "Face SSD\n&\nResize\n(128/160)", bg="#FFFFFF", edge="#666666", fontsize=8.3, bold=False)
+    draw_box(1.29, 0.50, 0.72, 1.70, "Data\nAugment\n(Rotate,\nDistort,\nFlip)", bg="#FFFFFF", edge="#666666", fontsize=8.3, bold=False)
+    draw_box(2.13, 0.50, 0.72, 1.70, "CLAHE &\nNorm\n[0, 1] /\nImageNet", bg="#FFFFFF", edge="#666666", fontsize=8.3, bold=False)
 
-    draw_arrow(3.0, 1.65, 3.65, 1.65)
+    draw_arrow(3.05, 1.35, 3.65, 1.35)
 
     # Column 2: Dataset Split & Pre-trained Models + Proposed CNN
-    draw_box(3.75, 0.35, 2.3, 0.55, "Dataset Split\n(Subject-Disjoint)", bg="#A2E05E", edge="#5D9C1E", fontsize=9.5)
+    draw_box(3.75, 0.30, 2.3, 0.52, "Dataset Split\n(Subject-Disjoint)", bg="#A2E05E", edge="#5D9C1E", fontsize=9.2)
     dashed_split = mpatches.FancyBboxPatch(
-        (3.7, 1.05), 2.4, 1.35, boxstyle="round,pad=0.08", facecolor="#FDFDFD", edgecolor="#333333", linestyle="--", linewidth=1.4
+        (3.7, 0.98), 2.4, 1.30, boxstyle="round,pad=0.08", facecolor="#FDFDFD", edgecolor="#333333", linestyle="--", linewidth=1.4
     )
     ax.add_patch(dashed_split)
-    draw_box(3.88, 1.80, 2.04, 0.45, "Training (32,404 - 78.5%)", bg="#FFFFFF", edge="#666666", fontsize=8.5, bold=False)
-    draw_box(3.88, 1.20, 2.04, 0.45, "Val (3,990) & Test (4,875)", bg="#FFFFFF", edge="#666666", fontsize=8.5, bold=False)
+    draw_box(3.88, 1.70, 2.04, 0.44, "Training (32,404 - 78.5%)", bg="#FFFFFF", edge="#666666", fontsize=8.3, bold=False)
+    draw_box(3.88, 1.12, 2.04, 0.44, "Val (3,990) & Test (4,875)", bg="#FFFFFF", edge="#666666", fontsize=8.3, bold=False)
 
-    draw_arrow(4.9, 2.45, 4.9, 2.95)
+    draw_arrow(4.9, 2.38, 4.9, 2.95)
 
-    draw_box(3.75, 5.25, 2.3, 0.6, "Pre-trained & Proposed\nModels", bg="#E6007A", edge="#99004F", fontsize=9.5, text_color="white")
+    draw_box(3.75, 5.55, 2.3, 0.6, "Pre-trained & Proposed\nModels", bg="#E6007A", edge="#99004F", fontsize=9.5, text_color="white")
     dashed_models = mpatches.FancyBboxPatch(
-        (3.7, 3.0), 2.4, 2.15, boxstyle="round,pad=0.08", facecolor="#FDFDFD", edgecolor="#333333", linestyle="--", linewidth=1.4
+        (3.7, 3.05), 2.4, 2.35, boxstyle="round,pad=0.08", facecolor="#FDFDFD", edgecolor="#333333", linestyle="--", linewidth=1.4
     )
     ax.add_patch(dashed_models)
     model_list = [
@@ -491,17 +515,17 @@ def plot_paper_fig1_architecture(out_path: Path) -> None:
         ("CNN (Proposed)", "#B8F2C8"),
     ]
     for idx, (m_label, m_col) in enumerate(model_list):
-        yy = 4.86 - idx * 0.285
+        yy = 5.10 - idx * 0.31
         draw_box(
-            3.88, yy, 2.04, 0.20, m_label, bg=m_col, edge="#557799", fontsize=8.3, bold=(m_label.startswith("CNN")), pad=0.03, rsize=0.06
+            3.88, yy, 2.04, 0.21, m_label, bg=m_col, edge="#557799", fontsize=8.3, bold=(m_label.startswith("CNN")), pad=0.03, rsize=0.06
         )
 
-    draw_arrow(6.15, 4.3, 6.75, 4.3)
+    draw_arrow(6.15, 4.5, 6.75, 4.5)
 
     # Column 3: Customize the Layer of Pre-trained Model & Build the Model
     draw_box(
         6.85,
-        3.85,
+        4.05,
         2.7,
         1.25,
         "Customize the Layer of\nPre-trained Model\n(Frozen Initial + Fine-tune\nGAP → FC 128 → FC 64\n→ Dropout 0.7 → Softmax)",
@@ -509,10 +533,10 @@ def plot_paper_fig1_architecture(out_path: Path) -> None:
         edge="#2E8B7E",
         fontsize=8.8,
     )
-    draw_arrow(8.2, 3.85, 8.2, 3.15)
+    draw_arrow(8.2, 4.00, 8.2, 3.30)
     draw_box(
         7.05,
-        2.35,
+        2.50,
         2.3,
         0.75,
         "Build & Train Model\n(lr = 0.0001, 20 Epochs)",
@@ -522,30 +546,29 @@ def plot_paper_fig1_architecture(out_path: Path) -> None:
         text_color="white",
     )
 
-    draw_arrow(9.4, 2.72, 10.1, 2.72)
+    draw_arrow(9.4, 2.88, 10.1, 3.60)
 
-    # Column 4: Model Evaluation
-    draw_box(10.25, 5.25, 2.7, 0.6, "Model Evaluation", bg="#94C9F5", edge="#2E6DA4", fontsize=10)
+    # Column 4: Model Evaluation & Sample Emotion Outputs (matching paper's Normal / Esophagus thumbnails)
+    draw_box(10.25, 5.55, 2.7, 0.6, "Model Evaluation", bg="#94C9F5", edge="#2E6DA4", fontsize=10)
     dashed_eval = mpatches.FancyBboxPatch(
-        (10.2, 2.3), 2.8, 2.8, boxstyle="round,pad=0.08", facecolor="#FDFDFD", edgecolor="#333333", linestyle="--", linewidth=1.4
+        (10.2, 2.65), 2.8, 2.75, boxstyle="round,pad=0.08", facecolor="#FDFDFD", edgecolor="#333333", linestyle="--", linewidth=1.4
     )
     ax.add_patch(dashed_eval)
     eval_metrics = ["Accuracy", "Precision", "Recall", "F1 - score", "Specificity & ROC-AUC"]
     for idx, em in enumerate(eval_metrics):
-        yy = 4.62 - idx * 0.51
-        draw_box(10.42, yy, 2.36, 0.38, em, bg="#FFFFFF", edge="#666666", fontsize=9.0)
+        yy = 4.95 - idx * 0.50
+        draw_box(10.42, yy, 2.36, 0.36, em, bg="#FFFFFF", edge="#666666", fontsize=8.8)
 
-    draw_arrow(11.6, 2.25, 11.6, 1.55)
-    draw_box(
-        10.25,
-        0.55,
-        2.7,
-        0.95,
-        "7 Facial Emotion Classes\n(Angry, Disgust, Fear, Happy,\nNeutral, Sad, Surprise)",
-        bg="#F4D5F7",
-        edge="#8E44AD",
-        fontsize=8.8,
-    )
+    # Two arrows down to sample predicted face thumbnails + double ovals (Happy / Angry, ... 7 classes)
+    draw_arrow(10.90, 2.60, 10.90, 2.08)
+    draw_arrow(12.30, 2.60, 12.30, 2.08)
+
+    draw_thumb("data/radiate/RADIATE_JPEGS1/AF_Color_JPEG/AF03_Color/AF03_HC.jpg", 10.35, 0.90, 1.10, 1.15, border_color="#2E6DA4")
+    draw_thumb("data/radiate/RADIATE_JPEGS1/AF_Color_JPEG/AF03_Color/AF03_AC.jpg", 11.75, 0.90, 1.10, 1.15, border_color="#C0392B")
+
+    draw_double_oval(10.90, 0.52, 1.15, 0.48, "Happy", "#2452B3")
+    draw_double_oval(12.30, 0.52, 1.15, 0.48, "Angry", "#C0392B")
+    ax.text(11.60, 0.14, "... (7 Facial Emotion Classes)", ha="center", va="center", fontsize=8.2, style="italic", color="#444444")
 
     fig.suptitle("Fig. 1  Proposed architecture of the study (Transfer Learning & CNN Comparison)", fontsize=12.5, fontweight="bold", y=0.98)
     fig.tight_layout(rect=[0, 0, 1, 0.94])
