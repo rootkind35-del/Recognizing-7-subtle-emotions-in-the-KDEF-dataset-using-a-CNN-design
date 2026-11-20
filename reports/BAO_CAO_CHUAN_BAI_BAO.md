@@ -79,19 +79,21 @@ Bộ dữ liệu được phân chia độc lập theo người thành ba tập:
 
 Quan sát **Hình 2** và **Hình 3** cho thấy `DenseNet201` và `ResNet50` hội tụ nhanh và đạt độ chính xác kiểm định cao, ổn định qua các epoch, trong khi `EfficientNetB4` cho tốc độ hội tụ chậm hơn và độ chính xác tổng thể thấp hơn các kiến trúc còn lại trên cấu hình tinh chỉnh 20 epochs. Mô hình `CNN` (đường nét đứt màu đen) thể hiện khả năng kiểm soát quá khớp rất tốt với đường hàm mất mát kiểm định (*Validation Loss*) duy trì ở mức thấp và ổn định.
 
-**Bảng 1** tổng hợp các độ đo hiệu năng chi tiết trên tập kiểm tra độc lập (`4.875` ảnh chưa từng thấy khi huấn luyện) bao gồm: *Accuracy, Precision, Recall, F1-Score, Specificity, ROC-AUC*, số lượng tham số và dung lượng tệp mô hình.
+**Bảng 1** trình bày kết quả so sánh hiệu năng trên tập kiểm tra độc lập (`4.875` ảnh chưa từng thấy khi huấn luyện) theo đúng các độ đo đánh giá của bài báo tham chiếu: **`Accuracy`**, **`Precision`**, **`Recall`**, **`F1-Score`** (và **`Specificity`**).
 
 **Bảng 1.** *So sánh hiệu năng các mô hình tiền huấn luyện (Transfer Learning) và mô hình CNN trên tập kiểm tra (4.875 ảnh).*
 
-| Mô hình | Độ chính xác (Accuracy) | Độ chuẩn xác (Precision Macro/Weighted) | Độ phủ (Recall Macro/Weighted) | F1-Score (Macro/Weighted) | Độ đặc hiệu (Specificity) | ROC-AUC | Số tham số | Dung lượng |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| **`EfficientNetB4`** [5] | 69,85% | 68,71% / 69,88% | 69,51% / 69,85% | 69,01% / 69,78% | 94,93% | 0,9249 | 17.787.215 | 68,61 MB |
-| **`CNN` (Nhóm tinh chỉnh)** | **73,39%** | 73,81% / 73,66% | 72,30% / 73,39% | **72,82%** / 73,33% | 95,50% | 0,9450 | **1.349.165** | **5,19 MB** |
-| **`VGG16`** [1] | 73,62% | 74,09% / 73,84% | 72,96% / 73,62% | 73,47% / 73,69% | 95,54% | 0,9376 | 14.789.447 | 56,44 MB |
-| **`InceptionV3`** [2] | 73,66% | 73,32% / 73,55% | 73,60% / 73,66% | 73,42% / 73,56% | 95,56% | 0,9422 | 22.056.935 | 84,49 MB |
-| **`VGG19`** [1] | 74,24% | 74,11% / 74,27% | 73,70% / 74,24% | 73,85% / 74,20% | 95,65% | 0,9418 | 20.099.143 | 76,70 MB |
-| **`ResNet50`** [3] | 74,48% | 73,79% / 74,22% | 74,08% / 74,48% | 73,88% / 74,29% | 95,69% | 0,9442 | 23.779.399 | 91,03 MB |
-| **`DenseNet201`** [4] | **76,18%** | **75,92% / 75,82%** | **76,08% / 76,18%** | **75,94% / 75,94%** | **95,97%** | **0,9499** | 18.347.911 | 71,33 MB |
+| Model | Accuracy | Precision | Recall | F1-Score |
+|---|---:|---:|---:|---:|
+| **`EfficientNetB4`** [5] | 69,85% | 68,71% | 69,51% | 69,01% |
+| **`CNN` (Nhóm tinh chỉnh)** | **73,39%** | **73,81%** | **72,30%** | **72,82%** |
+| **`VGG16`** [1] | 73,62% | 74,09% | 72,96% | 73,47% |
+| **`InceptionV3`** [2] | 73,66% | 73,32% | 73,60% | 73,42% |
+| **`VGG19`** [1] | 74,24% | 74,11% | 73,70% | 73,85% |
+| **`ResNet50`** [3] | 74,48% | 73,79% | 74,08% | 73,88% |
+| **`DenseNet201`** [4] | **76,18%** | **75,92%** | **76,08%** | **75,94%** |
+
+*(Ghi chú thêm về độ đặc hiệu — Specificity ở Hình 1: `DenseNet201` đạt **95,97%**, `ResNet50` **95,69%**, `VGG19` **95,65%**, `InceptionV3` **95,56%**, `VGG16` **95,54%**, `CNN` **95,50%**, `EfficientNetB4` **94,93%**).*
 
 ![Biểu đồ đối sánh Table 1](figures/paper_table1_metrics_bar.png)
 *Hình đối sánh trực quan các chỉ số Accuracy, Precision, Recall và F1-Score của các mô hình trong Bảng 1.*
